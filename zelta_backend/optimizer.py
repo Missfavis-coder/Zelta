@@ -7,6 +7,7 @@ It:
   - Sends wallet_data, transactions, user_context
   - Returns a normalized brain dict
   - Provides Bayse and stress helper fetchers
+  - Provides a direct Copilot question-answering helper
 """
 
 import json
@@ -21,6 +22,7 @@ from config.settings import settings
 logger = logging.getLogger(__name__)
 
 BRAIN_TIMEOUT = 30.0
+COPILOT_TIMEOUT = 20.0
 
 
 def _base_url() -> str:
@@ -152,13 +154,59 @@ def _brain_payload(
     return _json_safe(payload)
 
 
+def _copilot_payload(question: str, context: Optional[dict]) -> dict:
+    return _json_safe(
+        {
+            "question": question,
+            "context": context or {},
+        }
+    )
+
+
+async def _post_json(path: str, payload: dict, timeout: float) -> dict:
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        resp = await client.post(
+            _brain_url(path),
+            headers=_brain_headers(),
+            json=payload,
+        )
+
+    logger.info("Brain route=%s status=%s body=%s", path, resp.status_code, resp.text)
+    if resp.status_code in (401, 403, 404, 422):
+        raise RuntimeError(f"{path} rejected request: {resp.status_code} {resp.text}")
+
+    resp.raise_for_status()
+    return resp.json()
+
+
+async def _get_json(path: str, timeout: float) -> dict:
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        resp = await client.get(
+            _brain_url(path),
+            headers=_brain_headers(),
+        )
+
+    logger.info("Brain GET route=%s status=%s body=%s", path, resp.status_code, resp.text)
+    if resp.status_code in (401, 403, 404, 422):
+        raise RuntimeError(f"{path} rejected request: {resp.status_code} {resp.text}")
+
+    resp.raise_for_status()
+    return resp.json()
+
+
 async def run_brain(
     wallet_data: Optional[dict] = None,
     profile_data: Optional[dict] = None,
     transaction_patterns: Optional[dict] = None,
+    mode: str = "full",  # "fast" | "full" | "legacy"
 ) -> dict:
     """
     Call the deployed ZELTA AI Brain and return a normalized dict.
+
+    Route priority:
+      1) /brain/pipeline/{mode}
+      2) /brain/intelligence
+      3) legacy fallback routes if needed
     """
     wallet_data = wallet_data or {}
     profile_data = profile_data or {}
@@ -182,41 +230,123 @@ async def run_brain(
 
     payload = _brain_payload(wallet_data, transactions, user_context)
 
-    try:
-        async with httpx.AsyncClient(timeout=BRAIN_TIMEOUT) as client:
-            resp = await client.post(
-                _brain_url("/brain/intelligence"),
-                headers=_brain_headers(),
-                json=payload,
-            )
+    route_candidates = [
+        f"/brain/pipeline/{mode}",
+        "/brain/intelligence",
+        "/brain/pipeline/full",
+        "/brain/pipeline/fast",
+    ]
 
-        logger.info("Brain status=%s body=%s", resp.status_code, resp.text)
-
-        if resp.status_code in (401, 403, 404, 422):
-            raise RuntimeError(f"Brain rejected request: {resp.status_code} {resp.text}")
-
-        resp.raise_for_status()
-
+    last_error = ""
+    for route in route_candidates:
         try:
-            data = resp.json()
-        except json.JSONDecodeError:
-            logger.error("Brain returned non-JSON response: %s", resp.text)
-            return normalise_brain_response(_fallback_brain_response(free_cash))
+            data = await _post_json(route, payload, timeout=BRAIN_TIMEOUT)
 
-        if isinstance(data, str):
-            logger.error("Brain returned a string response: %s", data)
-            return normalise_brain_response(_fallback_brain_response(free_cash))
+            if isinstance(data, str):
+                logger.error("Brain returned a string response: %s", data)
+                return normalise_brain_response(_fallback_brain_response(free_cash))
 
-        if isinstance(data, dict) and data.get("success") is False:
-            logger.error("Brain returned success=false: %s", data)
-            return normalise_brain_response(_fallback_brain_response(free_cash))
+            if isinstance(data, dict) and data.get("success") is False:
+                logger.error("Brain returned success=false: %s", data)
+                return normalise_brain_response(_fallback_brain_response(free_cash))
 
-        body = _extract_body(data)
-        return normalise_brain_response(body)
+            body = _extract_body(data)
+            return normalise_brain_response(body)
 
-    except Exception as e:
-        logger.error("Brain call failed: %s", e)
-        return normalise_brain_response(_fallback_brain_response(free_cash))
+        except Exception as e:
+            last_error = str(e)
+            logger.warning("Brain route failed (%s): %s", route, e)
+
+    logger.error("Brain call failed after all routes: %s", last_error)
+    return normalise_brain_response(_fallback_brain_response(free_cash))
+
+
+async def answer_question(
+    question: str,
+    context: Optional[dict] = None,
+) -> dict:
+    """
+    Call the Brain Copilot route and return a normalized answer payload.
+
+    Route priority:
+      1) /brain/ask
+      2) /api/ask
+      3) /brain/copilot
+      4) /api/copilot
+    """
+    payload = _copilot_payload(question, context)
+
+    route_candidates = [
+        "/brain/ask",
+        "/api/ask",
+        "/brain/copilot",
+        "/api/copilot",
+    ]
+
+    last_error = ""
+    for route in route_candidates:
+        try:
+            data = await _post_json(route, payload, timeout=COPILOT_TIMEOUT)
+
+            if isinstance(data, dict):
+                body = _extract_body(data)
+
+                answer = _safe_str(body.get("answer") or body.get("response"), "")
+                if not answer:
+                    answer = "I could not generate a response just now. Please try again."
+
+                verdict = _safe_str(body.get("verdict", "HOLD"), "HOLD").upper()
+                if verdict not in {"SAVE", "INVEST", "HOLD"}:
+                    verdict = "HOLD"
+
+                verdict_amount = body.get("verdict_amount", body.get("amount", 0.0))
+                if isinstance(verdict_amount, str):
+                    cleaned = verdict_amount.replace("₦", "").replace(",", "").strip()
+                    try:
+                        verdict_amount = float(cleaned)
+                    except ValueError:
+                        verdict_amount = 0.0
+                else:
+                    verdict_amount = _safe_float(verdict_amount, 0.0)
+
+                confidence = _safe_float(body.get("confidence", 70.0), 70.0)
+
+                sources = body.get("sources", ["Bayse Markets", "Wallet Data", "BQ Engine"])
+                if not isinstance(sources, list):
+                    sources = [str(sources)]
+
+                context_pills = body.get("context_pills", [])
+                if not isinstance(context_pills, list):
+                    context_pills = []
+
+                return {
+                    "success": True,
+                    "answer": answer,
+                    "verdict": verdict,
+                    "verdict_amount": 0.0 if verdict == "HOLD" else verdict_amount,
+                    "confidence": max(0.0, min(100.0, confidence)),
+                    "sources": sources,
+                    "context_pills": context_pills,
+                    "raw": body,
+                }
+
+            last_error = f"Unexpected response type from {route}"
+
+        except Exception as e:
+            last_error = str(e)
+            logger.warning("Copilot route failed (%s): %s", route, e)
+
+    logger.error("Copilot call failed after all routes: %s", last_error)
+    return {
+        "success": False,
+        "answer": "The AI Brain Copilot is temporarily unavailable.",
+        "verdict": "HOLD",
+        "verdict_amount": 0.0,
+        "confidence": 65.0,
+        "sources": ["BQ Engine (local)", "Bayse Markets"],
+        "context_pills": [],
+        "raw": {},
+    }
 
 
 async def _get_signal_json(paths: Sequence[str], timeout: float = 15.0) -> Tuple[dict, str]:
@@ -227,17 +357,9 @@ async def _get_signal_json(paths: Sequence[str], timeout: float = 15.0) -> Tuple
         last_error = ""
         for path in paths:
             try:
-                resp = await client.get(_brain_url(path), headers=_brain_headers())
-
-                if resp.status_code in (401, 403, 404, 422):
-                    last_error = f"{resp.status_code}: {resp.text}"
-                    continue
-
-                resp.raise_for_status()
-                data = resp.json()
+                data = await _get_json(path, timeout=timeout)
                 if isinstance(data, dict):
                     return data, path
-
                 last_error = f"Non-dict response from {path}"
             except Exception as exc:
                 last_error = str(exc)
@@ -392,6 +514,7 @@ def normalise_brain_response(raw_data: dict) -> dict:
     """
     raw_data = raw_data or {}
 
+    # Flat intelligence report -> nested shape
     if any(
         k in raw_data
         for k in (
