@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, status
+import asyncio
 import logging
+from fastapi import APIRouter, HTTPException, status
 
 from core.dependencies import CurrentUser, DB
 from services.copilot_service import answer_question
@@ -8,9 +9,7 @@ from services.wallet_service import get_wallet_summary
 from schemas.copilot import CopilotRequest, CopilotAPIResponse
 
 logger = logging.getLogger(__name__)
-
 router = APIRouter(prefix="/api/copilot", tags=["BQ Co-Pilot"])
-
 
 @router.post("", response_model=CopilotAPIResponse)
 async def ask_copilot(
@@ -18,35 +17,29 @@ async def ask_copilot(
     db: DB,
     request: CopilotRequest,
 ):
-    """
-    BQ Co-Pilot: Gemini-powered plain-English financial advisor.
-
-    Sends the user's question to Gemini with full BQ context:
-    - Bayse stress signal
-    - Active behavioral bias
-    - Wallet state
-    - Upcoming obligations
-
-    Always returns a SAVE / INVEST / HOLD verdict in NGN.
-    Max response: 120 words. No jargon.
-    """
     uid = current_user["uid"]
 
+    # 1. Load context concurrently to reduce latency
+    # We use return_exceptions=True so one failure doesn't kill the other
+    tasks = [get_intelligence(db, uid), get_wallet_summary(db, uid)]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # 2. Extract Brain Context
+    if isinstance(results[0], Exception):
+        logger.warning("Brain context load failed for uid=%s: %s", uid, results[0])
+        brain_context = {}
+    else:
+        brain_context = results[0].model_dump()
+
+    # 3. Extract Wallet Context
+    if isinstance(results[1], Exception):
+        logger.warning("Wallet context load failed for uid=%s: %s", uid, results[1])
+        wallet_context = {}
+    else:
+        wallet_context = results[1].model_dump()
+
     try:
-        try:
-            brain = await get_intelligence(db, uid)
-            brain_context = brain.model_dump()
-        except Exception as e:
-            logger.warning("Brain context load failed for copilot uid=%s: %s", uid, e)
-            brain_context = {}
-
-        try:
-            wallet = await get_wallet_summary(db, uid)
-            wallet_context = wallet.model_dump()
-        except Exception as e:
-            logger.warning("Wallet context load failed for copilot uid=%s: %s", uid, e)
-            wallet_context = {}
-
+        # 4. Orchestrate the answer
         response = await answer_question(
             db=db,
             uid=uid,
@@ -58,8 +51,8 @@ async def ask_copilot(
         return CopilotAPIResponse(success=True, data=response)
 
     except Exception as e:
-        logger.error("Copilot error for %s: %s", uid, e)
+        logger.error("Critical Copilot failure for %s: %s", uid, e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
+            detail="The Co-Pilot is having trouble processing that right now. Please try again shortly.",
         )
