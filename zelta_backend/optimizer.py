@@ -204,8 +204,8 @@ async def run_brain(
     Call the deployed ZELTA AI Brain and return a normalized dict.
 
     Route priority:
-      1) /brain/pipeline/{mode}
-      2) /brain/intelligence
+      1) /brain/v1/intelligence
+      
       3) legacy fallback routes if needed
     """
     wallet_data = wallet_data or {}
@@ -231,8 +231,7 @@ async def run_brain(
     payload = _brain_payload(wallet_data, transactions, user_context)
 
     route_candidates = [
-        f"/brain/pipeline/{mode}",
-        "/brain/intelligence",
+        f"/brain/v1/intelligence",
         "/brain/pipeline/full",
         "/brain/pipeline/fast",
     ]
