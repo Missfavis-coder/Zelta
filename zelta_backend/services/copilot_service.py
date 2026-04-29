@@ -221,9 +221,9 @@ async def answer_question(
     try:
         # 3. Call the Optimizer Client (hits /brain/v1/ask)
         result = await brain_answer_question(
-            question=request.question,
-            context=brain_payload,
-        )
+                question=brain_payload["question"],
+                context=brain_payload["context"],
+            )
 
         success = bool(result.get("success", True))
         answer = _safe_str(
