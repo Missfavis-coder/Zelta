@@ -267,16 +267,13 @@ async def answer_question(
 ) -> dict:
     """
     Call the Brain Copilot route and return a normalized answer payload.
-
-    Route priority:
-      1) /brain/ask
-      2) /api/ask
-      3) /brain/copilot
-      4) /api/copilot
+    Priority updated to include the confirmed /brain/v1/ask endpoint.
     """
     payload = _copilot_payload(question, context)
 
+    # Added the confirmed v1 route as the first candidate
     route_candidates = [
+        "/brain/v1/ask",
         "/brain/ask",
         "/api/ask",
         "/brain/copilot",
@@ -286,19 +283,23 @@ async def answer_question(
     last_error = ""
     for route in route_candidates:
         try:
+            # _post_json handles headers (x-api-key) and standard error raises
             data = await _post_json(route, payload, timeout=COPILOT_TIMEOUT)
 
             if isinstance(data, dict):
                 body = _extract_body(data)
 
+                # Extract answer from the "data" or "response" field
                 answer = _safe_str(body.get("answer") or body.get("response"), "")
                 if not answer:
                     answer = "I could not generate a response just now. Please try again."
 
+                # Normalizing Verdict (INVEST, SAVE, or HOLD)
                 verdict = _safe_str(body.get("verdict", "HOLD"), "HOLD").upper()
                 if verdict not in {"SAVE", "INVEST", "HOLD"}:
                     verdict = "HOLD"
 
+                # Cleaning and converting Naira strings or raw numbers to float
                 verdict_amount = body.get("verdict_amount", body.get("amount", 0.0))
                 if isinstance(verdict_amount, str):
                     cleaned = verdict_amount.replace("₦", "").replace(",", "").strip()
@@ -334,8 +335,13 @@ async def answer_question(
 
         except Exception as e:
             last_error = str(e)
+            # If we hit a 404, we continue to the next candidate
+            if "404" in last_error:
+                logger.warning("Route %s not found (404). Trying next...", route)
+                continue
             logger.warning("Copilot route failed (%s): %s", route, e)
 
+    # Final fallback if all candidates fail
     logger.error("Copilot call failed after all routes: %s", last_error)
     return {
         "success": False,
@@ -345,7 +351,7 @@ async def answer_question(
         "confidence": 65.0,
         "sources": ["BQ Engine (local)", "Bayse Markets"],
         "context_pills": [],
-        "raw": {},
+        "raw": {"error": last_error},
     }
 
 
