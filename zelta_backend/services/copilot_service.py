@@ -10,7 +10,7 @@ This service only:
 """
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, List
 
 from google.cloud import firestore
 
@@ -33,10 +33,6 @@ def _safe_str(value: Any, default: str = "") -> str:
     if value is None:
         return default
     return str(value)
-
-
-def _safe_list(value: Any) -> List[Any]:
-    return value if isinstance(value, list) else []
 
 
 def _normalize_brain_context(brain_context: dict) -> dict:
@@ -189,7 +185,12 @@ def _safe_context_pills(value: Any) -> List[ContextPill]:
             if label or pill_value:
                 pills.append(ContextPill(label=label, value=pill_value))
         elif hasattr(item, "label") and hasattr(item, "value"):
-            pills.append(ContextPill(label=_safe_str(getattr(item, "label", "")), value=_safe_str(getattr(item, "value", ""))))
+            pills.append(
+                ContextPill(
+                    label=_safe_str(getattr(item, "label", "")),
+                    value=_safe_str(getattr(item, "value", "")),
+                )
+            )
     return pills
 
 
