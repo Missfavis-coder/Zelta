@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from security import verify_internal_request
 from brain.pipeline import ZeltaPipeline
 from brain.bayse.stress_signal import monitor
-from brain.copilot import ZeltaCopilot
+from brain.copilot.gemini import ZeltaCopilot
 
 
 logger = logging.getLogger("zelta.api")
