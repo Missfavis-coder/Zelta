@@ -9,10 +9,15 @@ class CopilotMessage(BaseModel):
     timestamp: Optional[datetime] = None
 
 class CopilotRequest(BaseModel):
-    model_config = ConfigDict(extra="ignore", from_attributes=True)
-    question: str = Field(..., min_length=1)
-    conversation_history: List[CopilotMessage] = Field(default_factory=list)
+    model_config = ConfigDict(extra="ignore")
 
+    question: str = Field(..., min_length=1)
+
+    # ✅ REQUIRED for your AI Brain integration
+    context: Optional[dict] = Field(default_factory=dict)
+
+    # ✅ optional but useful for chat memory
+    conversation_history: List[CopilotMessage] = Field(default_factory=list)
 class ContextPill(BaseModel):
     # Added from_attributes here to stop the nested validation error
     model_config = ConfigDict(extra="ignore", from_attributes=True)
