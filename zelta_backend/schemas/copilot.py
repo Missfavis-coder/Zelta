@@ -19,7 +19,8 @@ class ContextPill(BaseModel):
     value: str
 
 class CopilotResponse(BaseModel):
-    model_config = ConfigDict(extra="ignore")
+    # from_attributes allows the model to interface with object instances
+    model_config = ConfigDict(extra="ignore", from_attributes=True)
     answer: str
     verdict: str = "HOLD"
     verdict_amount: float = 0.0
@@ -28,5 +29,6 @@ class CopilotResponse(BaseModel):
     sources: List[str] = Field(default_factory=list)
 
 class CopilotAPIResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     success: bool
     data: CopilotResponse
