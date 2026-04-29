@@ -15,50 +15,10 @@ from typing import Any, List, Optional
 from datetime import datetime
 
 from google.cloud import firestore
-from pydantic import BaseModel, ConfigDict, Field
-
 from optimizer import answer_question as brain_answer_question
-
+from schemas.copilot import CopilotMessage, CopilotRequest, ContextPill, CopilotResponse, CopilotAPIResponse
 # Set up logging
 logger = logging.getLogger(__name__)
-
-
-# --- SCHEMAS ---
-
-class CopilotMessage(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-    role: str  # "user" or "assistant"
-    content: str
-    timestamp: Optional[datetime] = None
-
-
-class CopilotRequest(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-    question: str = Field(..., min_length=1, max_length=1000)
-    conversation_history: List[CopilotMessage] = Field(default_factory=list)
-
-
-class ContextPill(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-    label: str
-    value: str
-
-
-class CopilotResponse(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-    answer: str
-    verdict: Optional[str] = "HOLD"  # SAVE / INVEST / HOLD
-    verdict_amount: Optional[float] = 0.0
-    context_pills: List[ContextPill] = Field(default_factory=list)
-    confidence: float = 70.0
-    sources: List[str] = Field(default_factory=list)
-
-
-class CopilotAPIResponse(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-    success: bool
-    data: CopilotResponse
-
 
 # --- UTILITIES ---
 
