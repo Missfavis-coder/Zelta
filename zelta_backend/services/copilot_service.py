@@ -202,15 +202,20 @@ async def answer_question(
     local_pills = _build_context_pills(normalized_brain, wallet_context)
 
     # 2. Construct the full payload for the Brain
+    history_list = [
+    {"role": msg.role, "content": msg.content}
+    for msg in (request.conversation_history or [])[-6:]
+    ]
+
     brain_payload = {
+    "question": request.question,   # ✅ REQUIRED
+    "context": {
         "brain": normalized_brain,
         "wallet": wallet_context or {},
-        "history": [
-            {"role": msg.role, "content": msg.content}
-            for msg in (request.conversation_history or [])[-6:]
-        ],
+        "history": history_list,
         "context_pills": [pill.model_dump() for pill in local_pills],
         "user_id": uid,
+      }
     }
 
     try:
