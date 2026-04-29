@@ -97,7 +97,7 @@ Rules:
 
         self.model = os.getenv(
             "VERTEX_GEMINI_MODEL",
-            os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+            os.getenv("GEMINI_MODEL", "gemini-1.5-flash"),
         )
 
     @staticmethod
@@ -209,18 +209,13 @@ No extra text outside JSON.
 
 {{
   "summary": "1 short sentence: what is happening in the market today in simple words.",
-
-  "reasoning": "2 short sentences: why ZELTA made this recommendation, using the crowd view, ZELTA view, the news, and the student's money situation.",
-
+  "reasoning": "2 short sentences: why ZELTA made this recommendation.",
   "action": "1 short sentence: what the student should do with their money right now, with actual NGN amounts.",
-
-  "what_this_means_for_you": "1-2 short sentences: explain how this affects the student's real life, savings, fees, or daily spending.",
-
-  "bias_explanation": "1 short sentence: explain the active bias in simple language the student will understand.",
-
-  "bq_alert": "Short warning if there is stress spending, panic, or risky behavior. Use student-friendly language. Set to null if no alert is needed.",
-
-  "context_summary": "1 short line for the UI pills, such as: 'Bayse: 44% YES | Market calm | HOLD recommended'"
+  "what_this_means_for_you": "1-2 short sentences: explain how this affects the student's real life.",
+  "bias_explanation": "1 short sentence: explain the active bias in simple language.",
+  "confidence_note": "A note on the recommendation quality.",
+  "bq_alert": "Short warning if needed or null.",
+  "context_summary": "1 short line for the UI pills"
 }}
 """.strip()
 
@@ -235,47 +230,27 @@ No extra text outside JSON.
         save_ngn = kelly.get("save_ngn", 0)
         hold_ngn = kelly.get("hold_ngn", 0)
 
+        # CRITICAL CHANGE: We ask for plain text here to avoid the JSON truncation error
         return f"""
 You are ZELTA, a money assistant for Nigerian university students.
+A student just asked you a question. Reply like a calm smart friend.
 
-A student just asked you a question.
-Reply like a calm smart friend who explains money in simple words.
-Assume the student does NOT know finance terms.
+The student asked: "{question}"
 
-The student asked:
-"{question}"
-
-Here is their current situation:
-- Market stress: {stress.get("score", 50)}/100 ({stress.get("level", "MODERATE")})
-- Market event: "{bayse.get("market_title", "Nigerian financial market")}"
-- Crowd view: {round((decision.get("market_probability", 0.5) or 0) * 100)}% YES
-- ZELTA view: {round((decision.get("rational_probability", 0.5) or 0) * 100)}% YES
+Their current situation:
+- Market: "{bayse.get("market_title", "Market")}" ({stress.get("level", "MODERATE")})
 - ZELTA recommendation: {decision.get("verdict", "HOLD")}
-- Safe amount to invest: ₦{invest_ngn:,.0f}
-- Safe amount to save: ₦{save_ngn:,.0f}
-- Amount to hold as buffer: ₦{hold_ngn:,.0f}
-- Active money habit: {bias.get("bias", "Rational")}
-- What that means: {bias.get("explanation", "")}
+- Safe to invest: ₦{invest_ngn:,.0f}
+- Save: ₦{save_ngn:,.0f} | Buffer: ₦{hold_ngn:,.0f}
+- Active habit: {bias.get("bias", "Rational")}
 
-How to answer:
-- Answer the question directly
-- Use simple English only
-- Mention the actual Naira amounts
-- Make it useful for student life, like hostel fees, food, data, transport, or side hustle money
-- Keep it short, clear, and practical
-- Do not sound like a lecturer or a finance textbook
-
-Return ONLY valid JSON. No markdown. No backticks. No extra text.
-
-{{
-  "answer": "A short direct answer in simple language.",
-  "why": "1-2 short sentences explaining why this is the best move right now.",
-  "what_it_means": "1 short sentence connecting the advice to the student’s real life.",
-  "action": "A clear action statement using real Naira amounts.",
-  "verdict": "INVEST / SAVE / HOLD",
-  "amount": "₦[amount]",
-  "follow_up_tip": "A short practical tip the student can use next."
-}}
+INSTRUCTIONS:
+- Answer the question directly and simply.
+- Use plain text only.
+- Do NOT use JSON formatting.
+- Do NOT use backticks or markdown.
+- Keep it under 100 words.
+- End with a clear action involving the Naira amounts.
 """.strip()
 
     @staticmethod
@@ -283,7 +258,6 @@ Return ONLY valid JSON. No markdown. No backticks. No extra text.
         text = getattr(response, "text", None)
         if text:
             return text.strip()
-
         try:
             return response.candidates[0].content.parts[0].text.strip()
         except Exception:
@@ -313,40 +287,31 @@ Return ONLY valid JSON. No markdown. No backticks. No extra text.
     @staticmethod
     def _extract_first_json_object(text: str) -> str:
         text = ZeltaCopilot._strip_code_fences(text)
-
         start = text.find("{")
         if start == -1:
             return ""
-
         depth = 0
         in_string = False
         escape = False
-
         for i in range(start, len(text)):
             ch = text[i]
-
             if escape:
                 escape = False
                 continue
-
             if ch == "\\":
                 escape = True
                 continue
-
             if ch == '"':
                 in_string = not in_string
                 continue
-
             if in_string:
                 continue
-
             if ch == "{":
                 depth += 1
             elif ch == "}":
                 depth -= 1
                 if depth == 0:
                     return text[start:i + 1]
-
         return ""
 
     @staticmethod
@@ -354,7 +319,6 @@ Return ONLY valid JSON. No markdown. No backticks. No extra text.
         json_text = ZeltaCopilot._extract_first_json_object(text)
         if not json_text:
             raise ValueError("No complete JSON object found in model output.")
-
         data = json.loads(json_text)
         return CopilotResult.model_validate(data)
 
@@ -362,9 +326,7 @@ Return ONLY valid JSON. No markdown. No backticks. No extra text.
     def _shorten_action(action: Optional[str]) -> Optional[str]:
         if not action:
             return action
-
         action = action.strip()
-
         verdict_match = re.search(
             r"(VERDICT:\s*(INVEST|SAVE|HOLD)\s*[₦N]?\s*[\d,]+(?:\.\d+)?)",
             action,
@@ -377,28 +339,27 @@ Return ONLY valid JSON. No markdown. No backticks. No extra text.
                 prefix = re.split(r"(?<=[.!?])\s+", prefix)[0].strip()
                 return f"{prefix} {verdict}".strip()
             return verdict
-
         parts = re.split(r"(?<=[.!?])\s+", action)
         return parts[0].strip() if parts else action
 
     @staticmethod
     def _normalize_question_answer(answer: str) -> str:
         answer = answer.strip()
-
+        # If the model mistakenly returned JSON (despite instructions), strip it
+        if answer.startswith("{"):
+            try:
+                data = json.loads(ZeltaCopilot._extract_first_json_object(answer))
+                if "answer" in data:
+                    answer = data["answer"]
+            except:
+                pass
+        
         answer = re.sub(
             r"VERDICT:\s*(INVEST|SAVE|HOLD)\s*([₦N])?\s*([\d,]+)",
             r"VERDICT: \1 ₦\3",
             answer,
             flags=re.IGNORECASE,
         )
-
-        answer = re.sub(
-            r"VERDICT:\s*(INVEST|SAVE|HOLD)\s+([\d,]+)",
-            r"VERDICT: \1 ₦\2",
-            answer,
-            flags=re.IGNORECASE,
-        )
-
         return answer
 
     async def _call_gemini_json(self, prompt: str) -> CopilotResult:
@@ -409,169 +370,65 @@ Return ONLY valid JSON. No markdown. No backticks. No extra text.
             response_mime_type="application/json",
             response_schema=self._response_schema(),
         )
-
         response = await self.client.aio.models.generate_content(
             model=self.model,
             contents=prompt,
             config=config,
         )
-
         text = self._extract_text(response)
-
-        logger.info("[Vertex Gemini RAW | JSON=True] %s", text[:300] if text else "EMPTY")
-
         if not text:
-            return CopilotResult(
-                confidence_note="AI explanation temporarily unavailable."
-            )
-
+            return CopilotResult(confidence_note="AI explanation temporarily unavailable.")
         try:
             result = self._parse_json_to_result(text)
             result.action = self._shorten_action(result.action)
             return result
         except Exception as e:
-            logger.warning("[ZELTA Co-Pilot] JSON parse error: %s", e)
-
-            repair_prompt = f"""
-Fix this into valid JSON only.
-
-Rules:
-- Output ONLY valid JSON.
-- Keep the same keys:
-  summary, reasoning, action, what_this_means_for_you, bias_explanation,
-  confidence_note, bq_alert, context_summary
-- Use null for missing values.
-- Do not add markdown or explanation.
-- Keep action short.
-- Make the language easy for a student to understand.
-
-Broken output:
-{text}
-""".strip()
-
+            logger.warning("[ZELTA Co-Pilot] JSON parse error, attempting repair: %s", e)
+            repair_prompt = f"Fix this into valid JSON only:\n{text}"
             repair_config = GenerateContentConfig(
                 system_instruction=f"{self.SYSTEM_PROMPT}\n\n{self.JSON_SYSTEM_PROMPT}",
                 temperature=0.0,
-                max_output_tokens=2048,
                 response_mime_type="application/json",
-                response_schema=self._response_schema(),
             )
-
             try:
                 repair_response = await self.client.aio.models.generate_content(
-                    model=self.model,
-                    contents=repair_prompt,
-                    config=repair_config,
+                    model=self.model, contents=repair_prompt, config=repair_config
                 )
-                repair_text = self._extract_text(repair_response)
-
-                logger.info(
-                    "[Vertex Gemini RAW | JSON-REPAIR] %s",
-                    repair_text[:300] if repair_text else "EMPTY",
-                )
-
-                if repair_text:
-                    repaired = self._parse_json_to_result(repair_text)
-                    repaired.action = self._shorten_action(repaired.action)
-                    return repaired
-            except Exception as repair_error:
-                logger.error("[ZELTA Co-Pilot] JSON repair failed: %s", repair_error)
-
-            return CopilotResult(
-                confidence_note="AI explanation temporarily unavailable."
-            )
+                repaired_text = self._extract_text(repair_response)
+                return self._parse_json_to_result(repaired_text)
+            except:
+                return CopilotResult(confidence_note="AI explanation temporarily unavailable.")
 
     async def _call_gemini_text(self, prompt: str) -> str:
         config = GenerateContentConfig(
             system_instruction=self.SYSTEM_PROMPT,
             temperature=0.3,
-            max_output_tokens=240,
+            max_output_tokens=400,
         )
-
         response = await self.client.aio.models.generate_content(
             model=self.model,
             contents=prompt,
             config=config,
         )
-
         text = self._extract_text(response)
-
-        logger.info("[Vertex Gemini RAW | JSON=False] %s", text[:300] if text else "EMPTY")
-
         return self._normalize_question_answer(text)
 
     async def run(self, data: Dict[str, Any]) -> Dict[str, Any]:
         prompt = self._build_pipeline_prompt(data)
-
         try:
             result = await self._call_gemini_json(prompt)
-            payload = result.model_dump(exclude_none=False)
-            logger.info("[ZELTA Co-Pilot] Action: %s", payload.get("action"))
-            return payload
-
+            return result.model_dump(exclude_none=False)
         except Exception as e:
             logger.error("[ZELTA Co-Pilot] Error: %s", e)
             return self._fallback_result()
 
     async def answer_question(self, question: str, context: Dict[str, Any]) -> str:
         prompt = self._build_question_prompt(question, context)
-
         try:
             answer = await self._call_gemini_text(prompt)
             if not answer:
                 return "Unable to answer right now. Check dashboard."
-
-            logger.info("[ZELTA Co-Pilot] Q: %s", question[:50])
             return answer
-
         except Exception as e:
             logger.error("[ZELTA Co-Pilot] Question error: %s", e)
             return "Unable to answer right now. Check dashboard."
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    async def _test():
-        copilot = ZeltaCopilot()
-
-        sample_data = {
-            "decision": {
-                "market_probability": 0.50,
-                "rational_probability": 0.50,
-                "edge": 0.00,
-                "verdict": "HOLD",
-            },
-            "stress": {
-                "score": 23,
-                "level": "CALM",
-            },
-            "bias": {
-                "bias": "Rational",
-                "confidence": "Low",
-            },
-            "nlp": {
-                "aggregate_sentiment": -0.13,
-            },
-            "allocation": {
-                "invest_ngn": 0,
-                "save_ngn": 0,
-                "hold_ngn": 26500,
-            },
-            "sharpe": {
-                "decision_score": 1,
-            },
-        }
-
-        print("\n================ PIPELINE TEST ================\n")
-        result = await copilot.run(sample_data)
-        print(json.dumps(result, indent=2))
-
-        print("\n================ QUESTION TEST ================\n")
-        answer = await copilot.answer_question(
-            "Should I invest now or hold?",
-            sample_data,
-        )
-        print(answer)
-
-    asyncio.run(_test())
