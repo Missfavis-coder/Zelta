@@ -1,8 +1,11 @@
 """
-Behavioral Snapshot schemas.
+Behavioral Snapshot + Behavioral Pattern schemas.
 
-This feature explains why ZELTA flagged the user's current behavior
-as irrational, using live brain output + recent wallet evidence.
+Behavioral Snapshot:
+Explains why ZELTA flagged the user's current behavior as irrational.
+
+Behavioral Pattern:
+Shows the user's 8-week behavioral trend across time.
 """
 
 from datetime import datetime
@@ -38,12 +41,36 @@ class BayseContext(BaseModel):
     market_title: str = ""
 
 
+class DecisionConfidence(BaseModel):
+    rational_pct: float
+    behavioral_pct: float
+    gap: float
+    confidence_score: float = 0.0
+    confidence_tier: str = "Low"
+    intervention_urgency: str = "MODERATE"
+    plain_english: str = ""
+
+
+class BehavioralBiasCard(BaseModel):
+    bias: str
+    status: str
+    current_strength: float
+    explanation: str
+
+
 class BehavioralSnapshot(BaseModel):
     active_bias: str
     confidence: str
     explanation: str
 
+    bayse_context: BayseContext
+    decision_confidence: DecisionConfidence
+
+    bias_strength_label: str = "LOW"
+    bias_strength_value: float = 0.0
+
     evidence: List[BehavioralEvidence] = Field(default_factory=list)
+    tracked_biases: List[BehavioralBiasCard] = Field(default_factory=list)
 
     instinct_says: InstinctSay
     math_says: MathSay
@@ -51,7 +78,7 @@ class BehavioralSnapshot(BaseModel):
     correction_value: float
     correction_plain: str
 
-    bayse_context: BayseContext
+    recommendation: str = ""
 
 
 class BehavioralSnapshotResponse(BaseModel):
@@ -61,10 +88,24 @@ class BehavioralSnapshotResponse(BaseModel):
     generated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
-class BehavioralSnapshotSummary(BaseModel):
-    active_bias: str
-    confidence: str
-    explanation: str
-    correction_value: float
-    correction_plain: str
-    bayse_context: BayseContext
+class BehavioralWeekItem(BaseModel):
+    week: str
+    bias: str
+    strength: float
+    note: str = ""
+    confidence_label: str = "LOW"
+
+
+class BehavioralPattern(BaseModel):
+    weeks: List[BehavioralWeekItem] = Field(default_factory=list)
+    dominant_bias: str = "None"
+    summary: str = ""
+    recommendation: str = ""
+    confidence_gap: float = 0.0
+
+
+class BehavioralPatternResponse(BaseModel):
+    success: bool = True
+    data: BehavioralPattern
+    uid: Optional[str] = None
+    generated_at: datetime = Field(default_factory=datetime.utcnow)
