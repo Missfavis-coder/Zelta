@@ -12,7 +12,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from core.dependencies import get_db, get_user_id
+from core.dependencies import DB, CurrentUser
 from schemas.behavioral import (
     BehavioralPatternResponse,
     BehavioralSnapshotResponse,
@@ -29,14 +29,14 @@ router = APIRouter(prefix="/api/behavioral", tags=["Behavioral"])
 
 @router.get("/snapshot", response_model=BehavioralSnapshotResponse)
 async def behavioral_snapshot(
-    db=Depends(get_db),
-    uid: str = Depends(get_user_id),
+    db: DB,
+    current_user: CurrentUser,
 ):
-    """
-    Return the current behavioral snapshot for the authenticated user.
-    """
     try:
+        uid = current_user["uid"]
+
         snapshot = await get_behavioral_snapshot(db, uid)
+
         return BehavioralSnapshotResponse(
             success=True,
             data=snapshot,
@@ -53,13 +53,14 @@ async def behavioral_snapshot(
 
 @router.get("/pattern", response_model=BehavioralPatternResponse)
 async def behavioral_pattern(
-    db=Depends(get_db),
-    uid: str = Depends(get_user_id),
+    db: DB,
+    current_user: CurrentUser,
 ):
     """
     Return the 8-week behavioral pattern for the authenticated user.
     """
     try:
+        uid = current_user["uid"]
         pattern = await get_behavioral_pattern(db, uid)
         return BehavioralPatternResponse(
             success=True,
