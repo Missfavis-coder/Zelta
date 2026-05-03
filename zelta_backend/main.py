@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from config.settings import settings
 from core.firebase import initialize_firebase
 from middleware.cors import setup_cors
-from routes import intelligence, wallet, simulation, copilot, portfolio, profile, dev_auth
+from routes import intelligence, wallet, simulation, copilot, portfolio, profile, dev_auth, behavioral
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -66,6 +66,7 @@ setup_cors(app)
 
 # ─── Routes ───────────────────────────────────────────────────────────────────
 app.include_router(intelligence.router)
+app.include_router(behavioral.router)
 app.include_router(wallet.router)
 app.include_router(simulation.router)
 app.include_router(copilot.router)
