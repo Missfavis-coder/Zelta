@@ -13,35 +13,23 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 
 from core.dependencies import DB, CurrentUser
-from schemas.behavioral import (
-    BehavioralPatternResponse,
-    BehavioralSnapshotResponse,
-)
-from services.behavioral_service import (
-    get_behavioral_pattern,
-    get_behavioral_snapshot,
-)
+from schemas.behavioral import BehavioralPattern, BehavioralSnapshot
+from services.behavioral_service import get_behavioral_pattern, get_behavioral_snapshot
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/behavioral", tags=["Behavioral"])
 
 
-@router.get("/snapshot", response_model=BehavioralSnapshotResponse)
+@router.get("/snapshot", response_model=BehavioralSnapshot)
 async def behavioral_snapshot(
     db: DB,
     current_user: CurrentUser,
 ):
     try:
         uid = current_user["uid"]
-
         snapshot = await get_behavioral_snapshot(db, uid)
-
-        return BehavioralSnapshotResponse(
-            success=True,
-            data=snapshot,
-            uid=uid,
-        )
+        return snapshot
 
     except Exception as exc:
         logger.exception("Behavioral snapshot failed: %s", exc)
@@ -51,7 +39,7 @@ async def behavioral_snapshot(
         )
 
 
-@router.get("/pattern", response_model=BehavioralPatternResponse)
+@router.get("/pattern", response_model=BehavioralPattern)
 async def behavioral_pattern(
     db: DB,
     current_user: CurrentUser,
@@ -62,11 +50,7 @@ async def behavioral_pattern(
     try:
         uid = current_user["uid"]
         pattern = await get_behavioral_pattern(db, uid)
-        return BehavioralPatternResponse(
-            success=True,
-            data=pattern,
-            uid=uid,
-        )
+        return pattern
 
     except Exception as exc:
         logger.exception("Behavioral pattern failed: %s", exc)
