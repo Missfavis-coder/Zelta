@@ -3,6 +3,9 @@ Behavioral routes.
 
 GET /api/behavioral/snapshot
 Returns a deep-dive explanation of the user's current behavior.
+
+GET /api/behavioral/pattern
+Returns the 8-week behavioral pattern.
 """
 
 import logging
@@ -10,8 +13,14 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 
 from core.dependencies import get_db, get_user_id
-from schemas.behavioral import BehavioralSnapshotResponse
-from services.behavioral_service import get_behavioral_snapshot
+from schemas.behavioral import (
+    BehavioralPatternResponse,
+    BehavioralSnapshotResponse,
+)
+from services.behavioral_service import (
+    get_behavioral_pattern,
+    get_behavioral_snapshot,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,4 +48,28 @@ async def behavioral_snapshot(
         raise HTTPException(
             status_code=500,
             detail=f"Could not build behavioral snapshot: {str(exc)}",
+        )
+
+
+@router.get("/pattern", response_model=BehavioralPatternResponse)
+async def behavioral_pattern(
+    db=Depends(get_db),
+    uid: str = Depends(get_user_id),
+):
+    """
+    Return the 8-week behavioral pattern for the authenticated user.
+    """
+    try:
+        pattern = await get_behavioral_pattern(db, uid)
+        return BehavioralPatternResponse(
+            success=True,
+            data=pattern,
+            uid=uid,
+        )
+
+    except Exception as exc:
+        logger.exception("Behavioral pattern failed: %s", exc)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Could not build behavioral pattern: {str(exc)}",
         )
