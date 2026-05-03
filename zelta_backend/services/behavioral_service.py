@@ -15,7 +15,7 @@ It only prepares human-readable behavioral explanations.
 """
 
 import logging
-from collections import Counter, defaultdict
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Tuple
 
@@ -29,8 +29,6 @@ from schemas.behavioral import (
     BehavioralPattern,
     BehavioralWeekItem,
     BehavioralSnapshot,
-    BayseContext,
-    DecisionConfidence,
     InstinctSay,
     MathSay,
 )
@@ -340,7 +338,6 @@ async def get_behavioral_snapshot(db: firestore.Client, uid: str) -> BehavioralS
     2. Recent wallet transactions from Firestore
     3. Recent portfolio decisions for bias context
     """
-    # 1. Wallet summary
     wallet = await get_wallet_summary(db, uid)
 
     wallet_data = {
@@ -349,7 +346,6 @@ async def get_behavioral_snapshot(db: firestore.Client, uid: str) -> BehavioralS
         "total_balance": _safe_float(getattr(wallet, "total_balance", 0.0)),
     }
 
-    # 2. Run brain
     brain = await run_brain(wallet_data=wallet_data)
 
     bias_data = brain.get("bias", {})
@@ -357,11 +353,9 @@ async def get_behavioral_snapshot(db: firestore.Client, uid: str) -> BehavioralS
     bayse_data = brain.get("bayse", {})
     confidence_data = brain.get("confidence", {})
 
-    # 3. Load recent transactions and decisions
     txns = await _load_recent_transactions(db, uid)
     decisions = await _load_recent_decisions(db, uid)
 
-    # 4. Use brain outputs
     bias_name = bias_data.get("active_bias", bias_data.get("bias", "Rational"))
     bias_confidence = bias_data.get("confidence", "Low")
     bias_explanation = bias_data.get("explanation", "")
@@ -375,7 +369,6 @@ async def get_behavioral_snapshot(db: firestore.Client, uid: str) -> BehavioralS
         0.5,
     )
 
-    # 5. Build evidence items
     evidence = _build_evidence_items(
         txns=txns,
         bayse_price=bayse_price,
@@ -383,24 +376,15 @@ async def get_behavioral_snapshot(db: firestore.Client, uid: str) -> BehavioralS
         bias_name=bias_name,
     )
 
-    # 6. Build correction model
     instinct_says, math_says, correction_value = _build_instinct_and_math(
         free_cash=free_cash,
         market_prob=market_prob,
         rational_prob=rational_prob,
     )
 
-    bayse_context = BayseContext(
-        crowd_fear=round(market_prob * 100, 1),
-        zelta_model=round(rational_prob * 100, 1),
-        gap=round(abs(market_prob - rational_prob) * 100, 1),
-        market_title=bayse_data.get("market_title", ""),
-    )
-
-    # 7. Confidence split
     rational_pct = _safe_float(confidence_data.get("rational_pct", round(rational_prob * 100, 1)))
     behavioral_pct = _safe_float(confidence_data.get("behavioral_pct", 100.0 - rational_pct))
-    confidence_gap = _safe_float(confidence_data.get("gap", abs(rational_pct - behavioral_pct)))
+    decision_gap = _safe_float(confidence_data.get("gap", abs(rational_pct - behavioral_pct)))
     confidence_score = _safe_float(
         confidence_data.get("confidence_score_100", confidence_data.get("confidence_score", 0.0))
     )
@@ -408,17 +392,6 @@ async def get_behavioral_snapshot(db: firestore.Client, uid: str) -> BehavioralS
     intervention_urgency = confidence_data.get("intervention_urgency", "MODERATE")
     decision_plain = confidence_data.get("plain_english", "")
 
-    decision_confidence = DecisionConfidence(
-        rational_pct=round(rational_pct, 1),
-        behavioral_pct=round(behavioral_pct, 1),
-        gap=round(confidence_gap, 1),
-        confidence_score=round(confidence_score, 1),
-        confidence_tier=confidence_tier,
-        intervention_urgency=intervention_urgency,
-        plain_english=decision_plain,
-    )
-
-    # 8. Build five bias cards
     tracked_biases, active_bias_strength, bias_strength_label = _build_bias_cards(
         bias_name=bias_name,
         recent_decisions=decisions,
@@ -439,8 +412,17 @@ async def get_behavioral_snapshot(db: firestore.Client, uid: str) -> BehavioralS
         active_bias=bias_name,
         confidence=bias_confidence,
         explanation=bias_explanation,
-        bayse_context=bayse_context,
-        decision_confidence=decision_confidence,
+        bayse_crowd_fear=round(market_prob * 100, 1),
+        bayse_zelta_model=round(rational_prob * 100, 1),
+        bayse_gap=round(abs(market_prob - rational_prob) * 100, 1),
+        bayse_market_title=bayse_data.get("market_title", ""),
+        rational_pct=round(rational_pct, 1),
+        behavioral_pct=round(behavioral_pct, 1),
+        decision_gap=round(decision_gap, 1),
+        confidence_score=round(confidence_score, 1),
+        confidence_tier=confidence_tier,
+        intervention_urgency=intervention_urgency,
+        decision_plain_english=decision_plain,
         bias_strength_label=bias_strength_label,
         bias_strength_value=round(active_bias_strength, 1),
         evidence=evidence,
@@ -468,7 +450,6 @@ async def get_behavioral_pattern(db: firestore.Client, uid: str) -> BehavioralPa
             confidence_gap=0.0,
         )
 
-    # Keep only recent records with a timestamp
     timed_decisions: List[Tuple[datetime, Dict[str, Any]]] = []
     for d in decisions:
         dt = _to_datetime(d.get("created_at") or d.get("resolved_at"))
@@ -477,7 +458,6 @@ async def get_behavioral_pattern(db: firestore.Client, uid: str) -> BehavioralPa
 
     timed_decisions.sort(key=lambda item: item[0])
 
-    # Take the last 8 time buckets, using actual weeks
     if timed_decisions:
         latest_dt = timed_decisions[-1][0]
     else:
@@ -494,7 +474,6 @@ async def get_behavioral_pattern(db: firestore.Client, uid: str) -> BehavioralPa
 
     for start in week_starts:
         end = start + timedelta(days=7)
-
         bucket = [d for dt, d in timed_decisions if start <= dt < end]
 
         if not bucket:
@@ -509,7 +488,6 @@ async def get_behavioral_pattern(db: firestore.Client, uid: str) -> BehavioralPa
             )
             continue
 
-        # Compute dominant bias
         bias_counter = Counter()
         score_values: List[float] = []
 
@@ -522,7 +500,6 @@ async def get_behavioral_pattern(db: firestore.Client, uid: str) -> BehavioralPa
         dominant_bias = bias_counter.most_common(1)[0][0] if bias_counter else "None"
         avg_score = sum(score_values) / max(1, len(score_values))
         strength = _bias_to_week_strength(avg_score)
-
         display_bias = _classify_bias_for_week(dominant_bias, strength)
 
         if strength >= 70:
@@ -547,7 +524,6 @@ async def get_behavioral_pattern(db: firestore.Client, uid: str) -> BehavioralPa
             )
         )
 
-    # Overall dominant bias across the 8 weeks
     all_biases = Counter(
         _bias_from_decision(d)
         for _, d in timed_decisions
@@ -555,10 +531,6 @@ async def get_behavioral_pattern(db: firestore.Client, uid: str) -> BehavioralPa
     )
     dominant_bias = all_biases.most_common(1)[0][0] if all_biases else "None"
 
-    resolved = [
-        d for _, d in timed_decisions
-        if str(d.get("outcome_label", "")).lower() != "pending"
-    ]
     total_decisions = len(timed_decisions)
     confidence_gap = 0.0
     if total_decisions > 0:
