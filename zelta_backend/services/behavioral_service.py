@@ -1,35 +1,49 @@
 """
 ZELTA Behavioral Service
 
-Behavioral Snapshot:
-Explains why ZELTA flagged the user's current behavior as irrational.
+This service powers:
+1. Behavioral Snapshot
+   - Why ZELTA flagged the user's current behavior as irrational
+   - Uses latest AI Brain output + recent wallet transactions
 
-It combines:
-1. Latest AI Brain output
-2. Recent wallet transactions from Firestore
-3. Simple correction logic for instinct vs math
+2. Behavioral Pattern
+   - 8-week behavioral trend screen
+   - Uses decision history from Firestore
 
 This service does NOT run the full pipeline in the frontend.
-It only prepares a human-readable behavioral explanation.
+It only prepares human-readable behavioral explanations.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from collections import Counter, defaultdict
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Tuple
 
-from datetime import datetime, timezone
 from google.cloud import firestore
 
 from optimizer import run_brain
 from services.wallet_service import get_wallet_summary
 from schemas.behavioral import (
+    BehavioralBiasCard,
     BehavioralEvidence,
+    BehavioralPattern,
+    BehavioralWeekItem,
     BehavioralSnapshot,
     BayseContext,
+    DecisionConfidence,
     InstinctSay,
     MathSay,
 )
 
 logger = logging.getLogger(__name__)
+
+BEHAVIORAL_BIASES = [
+    "Loss Aversion",
+    "Present Bias",
+    "Overconfidence",
+    "Herd Behavior",
+    "Mental Accounting",
+]
 
 
 def _safe_float(value: Any, default: float = 0.0) -> float:
@@ -50,6 +64,36 @@ def _format_amount(amount: float) -> str:
     return f"₦{amount:,.0f}"
 
 
+def _to_datetime(value: Any) -> datetime | None:
+    """
+    Convert Firestore timestamps / ISO strings / datetimes into datetime.
+    """
+    if value is None:
+        return None
+
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value
+
+    try:
+        if hasattr(value, "to_datetime"):
+            dt = value.to_datetime()
+            if dt.tzinfo is None:
+                return dt.replace(tzinfo=timezone.utc)
+            return dt
+    except Exception:
+        pass
+
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed
+    except Exception:
+        return None
+
+
 def _get_transactions_ref(db: firestore.Client, uid: str):
     return (
         db.collection("users")
@@ -57,6 +101,16 @@ def _get_transactions_ref(db: firestore.Client, uid: str):
         .collection("transactions")
         .order_by("date", direction=firestore.Query.DESCENDING)
         .limit(10)
+    )
+
+
+def _get_decisions_ref(db: firestore.Client, uid: str):
+    return (
+        db.collection("portfolio")
+        .document(uid)
+        .collection("decisions")
+        .order_by("created_at", direction=firestore.Query.DESCENDING)
+        .limit(100)
     )
 
 
@@ -69,6 +123,18 @@ async def _load_recent_transactions(db: firestore.Client, uid: str) -> List[Dict
         return [doc.to_dict() for doc in docs if doc.to_dict()]
     except Exception as exc:
         logger.exception("Failed to load recent transactions: %s", exc)
+        return []
+
+
+async def _load_recent_decisions(db: firestore.Client, uid: str) -> List[Dict[str, Any]]:
+    """
+    Load recent portfolio decisions from Firestore.
+    """
+    try:
+        docs = _get_decisions_ref(db, uid).stream()
+        return [doc.to_dict() for doc in docs if doc.to_dict()]
+    except Exception as exc:
+        logger.exception("Failed to load recent decisions: %s", exc)
         return []
 
 
@@ -109,10 +175,9 @@ def _build_evidence_items(
     """
     evidence: List[BehavioralEvidence] = []
 
-    for txn in txns[:3]:
+    for txn in txns[:5]:
         amount = _safe_float(txn.get("amount", 0.0))
         txn_type = str(txn.get("type", "expense")).lower()
-        category = str(txn.get("category", "general"))
         txn_date = txn.get("date") or txn.get("created_at") or ""
 
         if txn_type not in ("expense", "withdrawal", "income"):
@@ -146,7 +211,7 @@ def _build_instinct_and_math(
     free_cash: float,
     market_prob: float,
     rational_prob: float,
-) -> tuple[InstinctSay, MathSay, float]:
+) -> Tuple[InstinctSay, MathSay, float]:
     """
     Create the instinct-vs-math comparison.
     """
@@ -167,11 +232,113 @@ def _build_instinct_and_math(
     return instinct, math, correction_value
 
 
+def _build_bias_cards(
+    bias_name: str,
+    recent_decisions: List[Dict[str, Any]],
+) -> Tuple[List[BehavioralBiasCard], float, str]:
+    """
+    Build the five bias cards shown on the behavioral screen.
+
+    Strength is estimated from recent decision history.
+    """
+    total = max(1, len(recent_decisions))
+    bias_counts = Counter()
+
+    for d in recent_decisions:
+        recorded_bias = (
+            d.get("bias_at_decision")
+            or d.get("bias")
+            or d.get("active_bias")
+            or "Rational"
+        )
+        bias_counts[str(recorded_bias)] += 1
+
+    cards: List[BehavioralBiasCard] = []
+    active_strength = 0.0
+
+    for b in BEHAVIORAL_BIASES:
+        count = bias_counts.get(b, 0)
+        strength = round((count / total) * 100, 1) if total > 0 else 0.0
+
+        if strength >= 70:
+            status = "HIGH"
+        elif strength >= 40:
+            status = "MODERATE"
+        else:
+            status = "LOW"
+
+        if b == bias_name:
+            status = "ACTIVE"
+            active_strength = max(active_strength, strength)
+
+        explanation = {
+            "Loss Aversion": "Prioritizing avoiding losses over potential gains during Bayse fear spikes.",
+            "Present Bias": "Tendency to prefer immediate rewards over delayed benefits.",
+            "Overconfidence": "Overestimating ability to predict outcomes when stress is low.",
+            "Herd Behavior": "Following peer decisions without independent analysis.",
+            "Mental Accounting": "Treating money differently based on source.",
+        }.get(b, "")
+
+        cards.append(
+            BehavioralBiasCard(
+                bias=b,
+                status=status,
+                current_strength=strength,
+                explanation=explanation,
+            )
+        )
+
+    if active_strength == 0.0:
+        active_strength = max(
+            (card.current_strength for card in cards if card.bias == bias_name),
+            default=0.0,
+        )
+
+    strength_label = (
+        "HIGH" if active_strength >= 70 else "MODERATE" if active_strength >= 40 else "LOW"
+    )
+
+    return cards, active_strength, strength_label
+
+
+def _bias_to_week_strength(decision_score: float) -> float:
+    """
+    Convert decision score into a readable weekly strength percentage.
+    """
+    return max(0.0, min(100.0, round(decision_score * 20.0, 1)))
+
+
+def _bias_from_decision(doc: Dict[str, Any]) -> str:
+    """
+    Extract bias from a decision record.
+    """
+    return (
+        doc.get("bias_at_decision")
+        or doc.get("bias")
+        or doc.get("active_bias")
+        or "None"
+    )
+
+
+def _classify_bias_for_week(bias_name: str, strength: float) -> str:
+    """
+    Decide whether a week should display a named bias or None.
+    """
+    if strength < 20:
+        return "None"
+    return bias_name
+
+
+def _week_label_for(dt: datetime) -> str:
+    return dt.strftime("Week %V")
+
+
 async def get_behavioral_snapshot(db: firestore.Client, uid: str) -> BehavioralSnapshot:
     """
     Build the behavioral snapshot from:
     1. Latest AI Brain output
     2. Recent wallet transactions from Firestore
+    3. Recent portfolio decisions for bias context
     """
     # 1. Wallet summary
     wallet = await get_wallet_summary(db, uid)
@@ -188,9 +355,11 @@ async def get_behavioral_snapshot(db: firestore.Client, uid: str) -> BehavioralS
     bias_data = brain.get("bias", {})
     decision_data = brain.get("decision", {})
     bayse_data = brain.get("bayse", {})
+    confidence_data = brain.get("confidence", {})
 
-    # 3. Load recent transactions
+    # 3. Load recent transactions and decisions
     txns = await _load_recent_transactions(db, uid)
+    decisions = await _load_recent_decisions(db, uid)
 
     # 4. Use brain outputs
     bias_name = bias_data.get("active_bias", bias_data.get("bias", "Rational"))
@@ -228,19 +397,191 @@ async def get_behavioral_snapshot(db: firestore.Client, uid: str) -> BehavioralS
         market_title=bayse_data.get("market_title", ""),
     )
 
+    # 7. Confidence split
+    rational_pct = _safe_float(confidence_data.get("rational_pct", round(rational_prob * 100, 1)))
+    behavioral_pct = _safe_float(confidence_data.get("behavioral_pct", 100.0 - rational_pct))
+    confidence_gap = _safe_float(confidence_data.get("gap", abs(rational_pct - behavioral_pct)))
+    confidence_score = _safe_float(
+        confidence_data.get("confidence_score_100", confidence_data.get("confidence_score", 0.0))
+    )
+    confidence_tier = confidence_data.get("confidence_tier", "Low")
+    intervention_urgency = confidence_data.get("intervention_urgency", "MODERATE")
+    decision_plain = confidence_data.get("plain_english", "")
+
+    decision_confidence = DecisionConfidence(
+        rational_pct=round(rational_pct, 1),
+        behavioral_pct=round(behavioral_pct, 1),
+        gap=round(confidence_gap, 1),
+        confidence_score=round(confidence_score, 1),
+        confidence_tier=confidence_tier,
+        intervention_urgency=intervention_urgency,
+        plain_english=decision_plain,
+    )
+
+    # 8. Build five bias cards
+    tracked_biases, active_bias_strength, bias_strength_label = _build_bias_cards(
+        bias_name=bias_name,
+        recent_decisions=decisions,
+    )
+
     correction_plain = (
         f"Acting on data instead of panic recovers {_format_amount(correction_value)} "
         f"in opportunity cost."
+    )
+
+    recommendation = (
+        f"Your {bias_name.lower()} is being triggered by Bayse crowd fear spikes that don't match actual risk. "
+        f"When Bayse signals go above 70%, wait 24 hours before making cash withdrawal decisions. "
+        f"The crowd panic typically corrects within 48 hours."
     )
 
     return BehavioralSnapshot(
         active_bias=bias_name,
         confidence=bias_confidence,
         explanation=bias_explanation,
+        bayse_context=bayse_context,
+        decision_confidence=decision_confidence,
+        bias_strength_label=bias_strength_label,
+        bias_strength_value=round(active_bias_strength, 1),
         evidence=evidence,
+        tracked_biases=tracked_biases,
         instinct_says=instinct_says,
         math_says=math_says,
         correction_value=round(correction_value, 2),
         correction_plain=correction_plain,
-        bayse_context=bayse_context,
+        recommendation=recommendation,
+    )
+
+
+async def get_behavioral_pattern(db: firestore.Client, uid: str) -> BehavioralPattern:
+    """
+    Build the 8-week behavioral pattern from decision history in Firestore.
+    """
+    decisions = await _load_recent_decisions(db, uid)
+
+    if not decisions:
+        return BehavioralPattern(
+            weeks=[],
+            dominant_bias="None",
+            summary="No behavioral history yet. Start saving decisions to build your pattern.",
+            recommendation="Keep logging ZELTA recommendations so your behavioral pattern can be tracked.",
+            confidence_gap=0.0,
+        )
+
+    # Keep only recent records with a timestamp
+    timed_decisions: List[Tuple[datetime, Dict[str, Any]]] = []
+    for d in decisions:
+        dt = _to_datetime(d.get("created_at") or d.get("resolved_at"))
+        if dt is not None:
+            timed_decisions.append((dt, d))
+
+    timed_decisions.sort(key=lambda item: item[0])
+
+    # Take the last 8 time buckets, using actual weeks
+    if timed_decisions:
+        latest_dt = timed_decisions[-1][0]
+    else:
+        latest_dt = datetime.now(timezone.utc)
+
+    week_starts: List[datetime] = []
+    current_start = latest_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+    current_start = current_start - timedelta(days=current_start.weekday())
+
+    for i in range(7, -1, -1):
+        week_starts.append(current_start - timedelta(weeks=i))
+
+    week_buckets: List[BehavioralWeekItem] = []
+
+    for start in week_starts:
+        end = start + timedelta(days=7)
+
+        bucket = [d for dt, d in timed_decisions if start <= dt < end]
+
+        if not bucket:
+            week_buckets.append(
+                BehavioralWeekItem(
+                    week=_week_label_for(start),
+                    bias="None",
+                    strength=10.0,
+                    note="No strong signal this week.",
+                    confidence_label="LOW",
+                )
+            )
+            continue
+
+        # Compute dominant bias
+        bias_counter = Counter()
+        score_values: List[float] = []
+
+        for doc in bucket:
+            bias_name = _bias_from_decision(doc)
+            if bias_name and bias_name != "Rational":
+                bias_counter[bias_name] += 1
+            score_values.append(_safe_float(doc.get("decision_score", 0.0)))
+
+        dominant_bias = bias_counter.most_common(1)[0][0] if bias_counter else "None"
+        avg_score = sum(score_values) / max(1, len(score_values))
+        strength = _bias_to_week_strength(avg_score)
+
+        display_bias = _classify_bias_for_week(dominant_bias, strength)
+
+        if strength >= 70:
+            confidence_label = "HIGH"
+        elif strength >= 40:
+            confidence_label = "MODERATE"
+        else:
+            confidence_label = "LOW"
+
+        if display_bias == "None":
+            note = "No strong behavioral bias detected."
+        else:
+            note = f"{display_bias} was the dominant pattern this week."
+
+        week_buckets.append(
+            BehavioralWeekItem(
+                week=_week_label_for(start),
+                bias=display_bias,
+                strength=round(strength, 1),
+                note=note,
+                confidence_label=confidence_label,
+            )
+        )
+
+    # Overall dominant bias across the 8 weeks
+    all_biases = Counter(
+        _bias_from_decision(d)
+        for _, d in timed_decisions
+        if _bias_from_decision(d) != "Rational"
+    )
+    dominant_bias = all_biases.most_common(1)[0][0] if all_biases else "None"
+
+    resolved = [
+        d for _, d in timed_decisions
+        if str(d.get("outcome_label", "")).lower() != "pending"
+    ]
+    total_decisions = len(timed_decisions)
+    confidence_gap = 0.0
+    if total_decisions > 0:
+        high_bias_count = sum(
+            1 for _, d in timed_decisions
+            if _bias_from_decision(d) != "Rational"
+        )
+        confidence_gap = round((high_bias_count / total_decisions) * 100, 1)
+
+    summary = (
+        f"Over the last 8 weeks, {dominant_bias.replace('_', ' ').title()} "
+        f"appeared most often in your decisions."
+    )
+
+    recommendation = (
+        f"Your {dominant_bias.lower() if dominant_bias != 'None' else 'behavior'} is being triggered by Bayse fear spikes that don't always match real risk. "
+        f"When Bayse signals are high, slow down before moving cash."
+    )
+
+    return BehavioralPattern(
+        weeks=week_buckets,
+        dominant_bias=dominant_bias,
+        summary=summary,
+        recommendation=recommendation,
+        confidence_gap=confidence_gap,
     )
