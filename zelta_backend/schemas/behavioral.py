@@ -34,23 +34,6 @@ class MathSay(BaseModel):
     amount: float
 
 
-class BayseContext(BaseModel):
-    crowd_fear: float
-    zelta_model: float
-    gap: float
-    market_title: str = ""
-
-
-class DecisionConfidence(BaseModel):
-    rational_pct: float
-    behavioral_pct: float
-    gap: float
-    confidence_score: float = 0.0
-    confidence_tier: str = "Low"
-    intervention_urgency: str = "MODERATE"
-    plain_english: str = ""
-
-
 class BehavioralBiasCard(BaseModel):
     bias: str
     status: str
@@ -63,8 +46,18 @@ class BehavioralSnapshot(BaseModel):
     confidence: str
     explanation: str
 
-    bayse_context: BayseContext
-    decision_confidence: DecisionConfidence
+    bayse_crowd_fear: float
+    bayse_zelta_model: float
+    bayse_gap: float
+    bayse_market_title: str = ""
+
+    rational_pct: float
+    behavioral_pct: float
+    decision_gap: float
+    confidence_score: float = 0.0
+    confidence_tier: str = "Low"
+    intervention_urgency: str = "MODERATE"
+    decision_plain_english: str = ""
 
     bias_strength_label: str = "LOW"
     bias_strength_value: float = 0.0
@@ -81,13 +74,6 @@ class BehavioralSnapshot(BaseModel):
     recommendation: str = ""
 
 
-class BehavioralSnapshotResponse(BaseModel):
-    success: bool = True
-    data: BehavioralSnapshot
-    uid: Optional[str] = None
-    generated_at: datetime = Field(default_factory=datetime.utcnow)
-
-
 class BehavioralWeekItem(BaseModel):
     week: str
     bias: str
@@ -102,10 +88,3 @@ class BehavioralPattern(BaseModel):
     summary: str = ""
     recommendation: str = ""
     confidence_gap: float = 0.0
-
-
-class BehavioralPatternResponse(BaseModel):
-    success: bool = True
-    data: BehavioralPattern
-    uid: Optional[str] = None
-    generated_at: datetime = Field(default_factory=datetime.utcnow)
