@@ -8,6 +8,11 @@ from google import genai
 from google.genai.types import GenerateContentConfig, HttpOptions
 from pydantic import BaseModel
 
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_core.memory import ConversationBufferMemory
+from langchain_google_vertexai import ChatVertexAI
+
 from config.settings import settings
 
 
@@ -98,6 +103,21 @@ Rules:
         self.model = os.getenv(
             "VERTEX_GEMINI_MODEL",
             os.getenv("GEMINI_MODEL", "gemini-1.5-flash"),
+        )
+
+        # LangChain ChatVertexAI for answer_question (with memory)
+        self.langchain_llm = ChatVertexAI(
+            model_name=self.model,
+            project=project_id,
+            location=location,
+            temperature=0.3,
+        )
+
+        # Conversation memory with window (keep last 5 exchanges)
+        self.memory = ConversationBufferMemory(
+            memory_key="chat_history",
+            return_messages=True,
+            output_key="answer",
         )
 
     @staticmethod
@@ -423,12 +443,79 @@ INSTRUCTIONS:
             return self._fallback_result()
 
     async def answer_question(self, question: str, context: Dict[str, Any]) -> str:
-        prompt = self._build_question_prompt(question, context)
+        """
+        Answer a question using LangChain ChatPromptTemplate and memory.
+        This is the only method that uses LangChain; _call_gemini_json remains unchanged.
+        """
         try:
-            answer = await self._call_gemini_text(prompt)
+            # Build context string
+            stress = context.get("stress", {})
+            bias = context.get("bias", {})
+            kelly = context.get("allocation") or context.get("kelly", {})
+            decision = context.get("decision", {})
+            bayse = context.get("bayse", {})
+
+            invest_ngn = kelly.get("invest_ngn", 0)
+            save_ngn = kelly.get("save_ngn", 0)
+            hold_ngn = kelly.get("hold_ngn", 0)
+
+            market_title = bayse.get("market_title", "Market")
+            stress_level = stress.get("level", "MODERATE")
+            verdict = decision.get("verdict", "HOLD")
+            bias_name = bias.get("bias", "Rational")
+
+            context_str = (
+                f"Market: {market_title} ({stress_level})\n"
+                f"ZELTA recommendation: {verdict}\n"
+                f"Safe to invest: ₦{invest_ngn:,.0f}\n"
+                f"Save: ₦{save_ngn:,.0f} | Buffer: ₦{hold_ngn:,.0f}\n"
+                f"Active habit: {bias_name}"
+            )
+
+            # Create ChatPromptTemplate
+            prompt_template = ChatPromptTemplate.from_messages([
+                ("system", self.SYSTEM_PROMPT),
+                MessagesPlaceholder(variable_name="chat_history"),
+                ("human", (
+                    "A student just asked you a question. Reply like a calm smart friend.\n\n"
+                    "The student asked: \"{question}\"\n\n"
+                    "Their current situation:\n{context_str}\n\n"
+                    "INSTRUCTIONS:\n"
+                    "- Answer the question directly and simply.\n"
+                    "- Use plain text only.\n"
+                    "- Do NOT use JSON formatting.\n"
+                    "- Do NOT use backticks or markdown.\n"
+                    "- Keep it under 100 words.\n"
+                    "- End with a clear action involving the Naira amounts."
+                )),
+            ])
+
+            # Format prompt with memory
+            inputs = {
+                "question": question,
+                "context_str": context_str,
+                "chat_history": self.memory.chat_memory.messages,
+            }
+
+            # Invoke the chain
+            chain = prompt_template | self.langchain_llm
+            response = await chain.ainvoke(inputs)
+
+            # Extract answer
+            answer = response.content if hasattr(response, "content") else str(response)
+
+            # Update memory
+            self.memory.chat_memory.add_user_message(question)
+            self.memory.chat_memory.add_ai_message(answer)
+
+            # Normalize answer
+            answer = self._normalize_question_answer(answer)
+
             if not answer:
                 return "Unable to answer right now. Check dashboard."
+
             return answer
+
         except Exception as e:
             logger.error("[ZELTA Co-Pilot] Question error: %s", e)
             return "Unable to answer right now. Check dashboard."

@@ -1,68 +1,47 @@
-# ─────────────────────────────────────────────
-# API Layer
-# ─────────────────────────────────────────────
+# ==============================================================================
+# SERVER & API LAYER (Cloud Run requires an entry point)
+# ==============================================================================
 fastapi==0.111.0
 uvicorn[standard]==0.30.1
+gunicorn==23.0.0
 
-# ─────────────────────────────────────────────
-# Networking / Async
-# ─────────────────────────────────────────────
+# ==============================================================================
+# ASYNCHRONOUS NETWORKING
+# ==============================================================================
 httpx==0.28.1
 websockets==14.1
 aiohttp==3.9.5
 
-# ─────────────────────────────────────────────
-# Environment / Config
-# ─────────────────────────────────────────────
+# ==============================================================================
+# CONFIGURATION & VALIDATION
+# ==============================================================================
 python-dotenv==1.0.1
+pydantic>=2.13.0,<3.0.0
 
-# ─────────────────────────────────────────────
-# Data / Validation
-# Upgraded from 2.7.4 → 2.9.2 to satisfy langchain-google-vertexai>=2.9
-# google-genai accepts pydantic<3.0.0,>=2.0.0 so this is safe
-# ─────────────────────────────────────────────
-pydantic==2.9.2
+# ==============================================================================
+# AI & ORCHESTRATION (Fixed version conflicts)
+# ==============================================================================
+# Use compatible versions for langchain-core
+# langchain-google-vertexai 3.2.3 requires langchain-core >=1.3.2,<2.0.0
+# Use langgraph 0.2.x which is compatible with langchain-core 1.x
+langchain-core>=1.3.2,<2.0.0
+langchain-google-vertexai==3.2.3
+google-genai==1.15.0
+langgraph>=0.2.0
 
-# ─────────────────────────────────────────────
-# AI / NLP
-# ─────────────────────────────────────────────
-transformers==4.41.2
-torch==2.2.2
+# ==============================================================================
+# MACHINE LEARNING & DATA
+# ==============================================================================
+torch>=2.10.0
+transformers>=4.41.2
+numpy>=2.4.4
+scipy>=1.17.1,<2.0.0
 
-# ─────────────────────────────────────────────
-# Scientific / Math
-# ─────────────────────────────────────────────
-numpy==1.26.4
-scipy==1.12.0
-
-# ─────────────────────────────────────────────
-# Scraping
-# ─────────────────────────────────────────────
+# ==============================================================================
+# PYTHON 3.14 COMPATIBILITY FIXES
+# ==============================================================================
+# langchain-google-vertexai 3.2.3 requires pyarrow<24.0.0
+# Use compatible version that still works with Python 3.14
+pyarrow>=19.0.1,<24.0.0
 beautifulsoup4==4.12.3
 newsapi-python==0.2.7
-
-# ─────────────────────────────────────────────
-# Google Gemini (Vertex AI) — native SDK
-# Kept for structured JSON output (response_schema) in pipeline copilot
-# LangChain wraps this; do NOT remove it
-# ─────────────────────────────────────────────
-google-genai==1.15.0
-
-# ─────────────────────────────────────────────
-# LangChain + LangGraph (agent layer)
-#
-# Version matrix verified:
-#   langchain-core==0.3.86
-#     → satisfies langchain-google-vertexai>=0.3.76
-#     → satisfies langgraph>=0.2.43,<0.4
-#   langchain-google-vertexai==2.1.2
-#     → uses GOOGLE_CLOUD_PROJECT + Vertex AI service account (no API key needed)
-#     → same auth as existing google-genai Vertex AI setup
-#   langgraph==0.2.76
-#     → StateGraph for agent routing (survival/emergency/opportunity mode)
-#     → MemorySaver for semester-level student state
-#     → compatible with langchain-core 0.3.x
-# ─────────────────────────────────────────────
-langchain-core==0.3.86
-langchain-google-vertexai==2.1.2
-langgraph==0.2.76

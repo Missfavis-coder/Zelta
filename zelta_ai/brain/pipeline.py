@@ -3,15 +3,7 @@ import logging
 import time
 from typing import Any, Dict, List, Optional
 
-from brain.bayse.stress_signal import monitor
-from brain.nlp.scraper import run_scraper
-from brain.nlp.scorer import ZeltaSentimentScorer
-from brain.stress.index import run_stress_index
-from brain.bias.detector import ZeltaBiasDetector
-from brain.bayesian.engine import run_bayesian_engine
-from brain.bayesian.confidence import run_confidence_scorer
-from brain.kelly.allocator import run_kelly_allocator
-from brain.sharpe.scorer import ZeltaDecisionScorer
+from brain.agent.loop import run_agent
 from brain.copilot.gemini import ZeltaCopilot
 
 logger = logging.getLogger("zelta.pipeline")
@@ -29,48 +21,81 @@ class ZeltaPipeline:
     """
     Central AI Brain Orchestrator (QUELO)
 
+    Now uses LangGraph agent for orchestration instead of sequential execution.
     Flow:
-    Market → NLP → Stress → Bias → Bayesian → Confidence → Kelly → Sharpe → Copilot
+    Input → Student Model → Agent Mode Router → Analysis Nodes → Copilot → Output
     """
 
     def __init__(self):
-        self.bayse = monitor
-        self.nlp = ZeltaSentimentScorer()
-        self.bias = ZeltaBiasDetector()
-        self.sharpe = ZeltaDecisionScorer()
         self.copilot = ZeltaCopilot()
-
-    async def _load_news_payload(self, bayse_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        payload = bayse_data.get("news_payload") or bayse_data.get("news") or []
-
-        if payload:
-            return payload
-
-        try:
-            scraped = await run_scraper()
-            return scraped or []
-        except Exception as exc:
-            logger.exception("Scraper failed: %s", exc)
-            return []
 
     def _validate_wallet(self, wallet_data: Optional[Dict[str, Any]]) -> Dict[str, float]:
         """
         Ensure wallet is always valid (comes from USER).
         Supports both locked_total and locked_amount for compatibility.
+        Validates against missing keys, zero cash, negative values, and bad defaults.
         """
         if not wallet_data:
+            logger.warning("[Pipeline] No wallet data provided, using safe defaults")
             return {
                 "free_cash": 10000.0,
                 "locked_total": 0.0,
                 "total_balance": 10000.0,
             }
 
+        # Extract and validate values
+        free_cash = wallet_data.get("free_cash", 0.0)
         locked_value = wallet_data.get("locked_total", wallet_data.get("locked_amount", 0.0))
+        total_balance = wallet_data.get("total_balance", 0.0)
+
+        # Convert to float and validate
+        try:
+            free_cash = float(free_cash)
+        except (TypeError, ValueError):
+            logger.warning("[Pipeline] Invalid free_cash, defaulting to 0")
+            free_cash = 0.0
+
+        try:
+            locked_value = float(locked_value)
+        except (TypeError, ValueError):
+            logger.warning("[Pipeline] Invalid locked_total, defaulting to 0")
+            locked_value = 0.0
+
+        try:
+            total_balance = float(total_balance)
+        except (TypeError, ValueError):
+            logger.warning("[Pipeline] Invalid total_balance, defaulting to free_cash + locked")
+            total_balance = free_cash + locked_value
+
+        # Guard against negative values
+        if free_cash < 0:
+            logger.warning("[Pipeline] Negative free_cash detected, setting to 0")
+            free_cash = 0.0
+
+        if locked_value < 0:
+            logger.warning("[Pipeline] Negative locked_total detected, setting to 0")
+            locked_value = 0.0
+
+        if total_balance < 0:
+            logger.warning("[Pipeline] Negative total_balance detected, recalculating")
+            total_balance = free_cash + locked_value
+
+        # Validate consistency: total_balance should be >= free_cash + locked_total
+        expected_total = free_cash + locked_value
+        if total_balance < expected_total:
+            logger.warning(
+                f"[Pipeline] Inconsistent wallet data: total_balance ({total_balance}) < free_cash + locked ({expected_total}), using calculated total"
+            )
+            total_balance = expected_total
+
+        # Warn if zero cash (but allow it - agent will handle EMERGENCY mode)
+        if free_cash == 0.0:
+            logger.warning("[Pipeline] Zero free_cash detected - agent will trigger EMERGENCY mode")
 
         return {
-            "free_cash": float(wallet_data.get("free_cash", 0.0)),
-            "locked_total": float(locked_value),
-            "total_balance": float(wallet_data.get("total_balance", 0.0)),
+            "free_cash": free_cash,
+            "locked_total": locked_value,
+            "total_balance": total_balance,
         }
 
     async def run_async(
@@ -86,94 +111,38 @@ class ZeltaPipeline:
             transactions = transactions or []
             user_context = user_context or {}
 
-            # 1. PRIMARY SIGNAL
-            bayse_data = self.bayse.get_signal() or {}
-
-            # 2. NLP
-            news_payload = await self._load_news_payload(bayse_data)
-            nlp_data = _to_dict(self.nlp.run(news_payload))
-            aggregate_sentiment = float(nlp_data.get("aggregate_sentiment", 0.0))
-
-            # 3. STRESS
-            stress_data = _to_dict(
-                run_stress_index(
-                    bayse_data,
-                    aggregate_sentiment,
-                )
+            # Run the LangGraph agent
+            agent_result = await run_agent(
+                wallet_data=wallet_data,
+                transactions=transactions,
+                user_context=user_context,
             )
 
-            # 4. BIAS
-            bias_data = _to_dict(
-                self.bias.run(
-                    stress_data,
-                    aggregate_sentiment,
-                    wallet_data,
-                )
-            )
-
-            # 5. BAYESIAN
-            bayesian_data = _to_dict(
-                run_bayesian_engine(
-                    stress_data,
-                    bias_data,
-                )
-            )
-
-            # 6. CONFIDENCE
-            confidence_data = _to_dict(
-                run_confidence_scorer(
-                    bayesian_data,
-                    stress_data,
-                    bias_data,
-                )
-            )
-
-            # 7. KELLY
-            kelly_data = _to_dict(
-                run_kelly_allocator(
-                    bayesian_data,
-                    confidence_data,
-                    wallet_data,
-                )
-            )
-
-            # 8. SHARPE
-            sharpe_data = _to_dict(self.sharpe.run(bayesian_data))
-
-            # 9. COPILOT
-            explanation = await self.copilot.run(
-                {
-                    "bayse": bayse_data,
-                    "nlp": nlp_data,
-                    "stress": stress_data,
-                    "bias": bias_data,
-                    "decision": bayesian_data,
-                    "confidence": confidence_data,
-                    "allocation": kelly_data,
-                    "sharpe": sharpe_data,
-                    "score": sharpe_data,
-                    "transactions": transactions,
-                    "user_context": user_context,
-                }
-            )
+            # Generate explanation using copilot
+            explanation = await self.copilot.run(agent_result)
             explanation = _to_dict(explanation)
 
             latency = round(time.time() - start_time, 3)
 
+            # Return response in the same format as before for backward compatibility
             return {
                 "meta": {
                     "latency_sec": latency,
                     "status": "success",
                 },
-                "bayse": bayse_data,
-                "nlp": nlp_data,
-                "stress": stress_data,
-                "bias": bias_data,
-                "decision": bayesian_data,
-                "confidence": confidence_data,
-                "allocation": kelly_data,
-                "score": sharpe_data,
+                "student_model": agent_result.get("student_model", {}),
+                "bayse": agent_result.get("bayse", {}),
+                "nlp": agent_result.get("nlp", {}),
+                "stress": agent_result.get("stress", {}),
+                "bias": agent_result.get("bias", {}),
+                "decision": agent_result.get("decision", {}),
+                "confidence": agent_result.get("confidence", {}),
+                "allocation": agent_result.get("allocation", {}),
+                "score": agent_result.get("score", {}),
                 "explanation": explanation,
+                # Tool outputs
+                "hustle_recommendations": agent_result.get("hustle_recommendations"),
+                "purchase_safety_check": agent_result.get("purchase_safety_check"),
             }
 
         except Exception as exc:
