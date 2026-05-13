@@ -18,8 +18,10 @@ python-dotenv==1.0.1
 
 # ─────────────────────────────────────────────
 # Data / Validation
+# Upgraded from 2.7.4 → 2.9.2 to satisfy langchain-google-vertexai>=2.9
+# google-genai accepts pydantic<3.0.0,>=2.0.0 so this is safe
 # ─────────────────────────────────────────────
-pydantic==2.7.4
+pydantic==2.9.2
 
 # ─────────────────────────────────────────────
 # AI / NLP
@@ -40,6 +42,27 @@ beautifulsoup4==4.12.3
 newsapi-python==0.2.7
 
 # ─────────────────────────────────────────────
-# Google Gemini (Vertex AI)
+# Google Gemini (Vertex AI) — native SDK
+# Kept for structured JSON output (response_schema) in pipeline copilot
+# LangChain wraps this; do NOT remove it
 # ─────────────────────────────────────────────
 google-genai==1.15.0
+
+# ─────────────────────────────────────────────
+# LangChain + LangGraph (agent layer)
+#
+# Version matrix verified:
+#   langchain-core==0.3.86
+#     → satisfies langchain-google-vertexai>=0.3.76
+#     → satisfies langgraph>=0.2.43,<0.4
+#   langchain-google-vertexai==2.1.2
+#     → uses GOOGLE_CLOUD_PROJECT + Vertex AI service account (no API key needed)
+#     → same auth as existing google-genai Vertex AI setup
+#   langgraph==0.2.76
+#     → StateGraph for agent routing (survival/emergency/opportunity mode)
+#     → MemorySaver for semester-level student state
+#     → compatible with langchain-core 0.3.x
+# ─────────────────────────────────────────────
+langchain-core==0.3.86
+langchain-google-vertexai==2.1.2
+langgraph==0.2.76
