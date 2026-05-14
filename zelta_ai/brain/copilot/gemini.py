@@ -6,15 +6,17 @@ All prompts use student_model as the single source of truth for
 survival state. No investment language. No finance jargon.
 """
 
-import os
+from __future__ import annotations
+
 import json
-import re
 import logging
+import os
+import re
 from typing import Any, Dict, Optional
 
 from google import genai
-from google.genai.types import GenerateContentConfig, HttpOptions
-from pydantic import BaseModel
+from google.genai import types
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger("zelta.copilot")
 if not logger.handlers:
@@ -22,18 +24,17 @@ if not logger.handlers:
 
 
 class CopilotResult(BaseModel):
-    summary:                Optional[str] = None
-    reasoning:              Optional[str] = None
-    action:                 Optional[str] = None
-    what_this_means_for_you:Optional[str] = None
-    bias_explanation:       Optional[str] = None
-    confidence_note:        Optional[str] = None
-    bq_alert:               Optional[str] = None
-    context_summary:        Optional[str] = None
+    summary: Optional[str] = None
+    reasoning: Optional[str] = None
+    action: Optional[str] = None
+    what_this_means_for_you: Optional[str] = None
+    bias_explanation: Optional[str] = None
+    confidence_note: Optional[str] = None
+    bq_alert: Optional[str] = None
+    context_summary: Optional[str] = None
 
 
 class ZeltaCopilot:
-
     SYSTEM_PROMPT = """
 You are ZELTA, a calm and friendly financial guide for Nigerian university students.
 
@@ -68,18 +69,46 @@ Return ONLY valid JSON. No markdown fences. No commentary. No truncation.
 Use double quotes. Unknown fields use null. Keep all text student-friendly.
 """.strip()
 
-    def __init__(self):
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-        location   = os.getenv("GOOGLE_CLOUD_LOCATION", "global")
-        if not project_id:
-            raise ValueError("GOOGLE_CLOUD_PROJECT not set.")
-        self.client = genai.Client(
-            vertexai=True,
-            project=project_id,
-            location=location,
-            http_options=HttpOptions(api_version="v1"),
-        )
-        self.model = os.getenv("VERTEX_GEMINI_MODEL", "gemini-1.5-flash")
+    def __init__(
+        self,
+        model: Optional[str] = None,
+        *,
+        project: Optional[str] = None,
+        location: Optional[str] = None,
+        api_key: Optional[str] = None,
+        use_vertexai: Optional[bool] = None,
+    ):
+        project = project or os.getenv("GOOGLE_CLOUD_PROJECT")
+        location = location or os.getenv("GOOGLE_CLOUD_LOCATION", "global")
+        api_key = api_key or os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+
+        if use_vertexai is None:
+            env_flag = os.getenv("GOOGLE_GENAI_USE_VERTEXAI")
+            if env_flag is not None:
+                use_vertexai = env_flag.strip().lower() in {"1", "true", "yes", "on"}
+            else:
+                use_vertexai = bool(project)
+
+        http_options = types.HttpOptions(api_version="v1")
+
+        if use_vertexai:
+            if not project:
+                raise ValueError("GOOGLE_CLOUD_PROJECT not set for Vertex AI mode.")
+            self.client = genai.Client(
+                vertexai=True,
+                project=project,
+                location=location,
+                http_options=http_options,
+            )
+        else:
+            if not api_key:
+                raise ValueError("GOOGLE_API_KEY or GEMINI_API_KEY not set for Gemini API mode.")
+            self.client = genai.Client(
+                api_key=api_key,
+                http_options=http_options,
+            )
+
+        self.model = model or os.getenv("VERTEX_GEMINI_MODEL", "gemini-2.0-flash")
 
     # ── response schema ───────────────────────────────────────────
 
@@ -88,69 +117,73 @@ Use double quotes. Unknown fields use null. Keep all text student-friendly.
         return {
             "type": "OBJECT",
             "properties": {
-                "summary":                  {"type": "STRING"},
-                "reasoning":                {"type": "STRING"},
-                "action":                   {"type": "STRING"},
-                "what_this_means_for_you":  {"type": "STRING"},
-                "bias_explanation":         {"type": "STRING"},
-                "confidence_note":          {"type": "STRING"},
-                "bq_alert":                 {"type": "STRING", "nullable": True},
-                "context_summary":          {"type": "STRING", "nullable": True},
+                "summary": {"type": "STRING"},
+                "reasoning": {"type": "STRING"},
+                "action": {"type": "STRING"},
+                "what_this_means_for_you": {"type": "STRING"},
+                "bias_explanation": {"type": "STRING"},
+                "confidence_note": {"type": "STRING"},
+                "bq_alert": {"type": "STRING", "nullable": True},
+                "context_summary": {"type": "STRING", "nullable": True},
             },
             "required": [
-                "summary", "reasoning", "action",
-                "what_this_means_for_you", "bias_explanation",
-                "confidence_note", "bq_alert", "context_summary",
+                "summary",
+                "reasoning",
+                "action",
+                "what_this_means_for_you",
+                "bias_explanation",
+                "confidence_note",
+                "bq_alert",
+                "context_summary",
             ],
         }
 
     # ── pipeline prompt ───────────────────────────────────────────
 
     def _build_pipeline_prompt(self, data: Dict[str, Any]) -> str:
-        # Step 3 fix: student_model is now the primary context source
         student_model = data.get("student_model", {})
-        bias          = data.get("bias", {})
-        bayse         = data.get("bayse", {})
-        stress        = data.get("stress", {})
-        kelly         = data.get("allocation", {})
+        bias = data.get("bias", {})
+        bayse = data.get("bayse", {})
+        stress = data.get("stress", {})
+        kelly = data.get("allocation", {})
 
-        # Student survival signals (from student_model — single source of truth)
-        agent_mode          = student_model.get("agent_mode", "NORMAL")
-        survival_score      = student_model.get("survival_score", 50)
-        free_cash           = student_model.get("free_cash", kelly.get("hold_ngn", 0))
-        weeks_of_runway     = student_model.get("weeks_of_runway", 30)
-        weeks_to_fee        = student_model.get("weeks_to_fee_deadline", 999)
-        fee_amount          = student_model.get("fee_amount_due", 0)
-        fee_gap             = student_model.get("fee_gap_ngn", 0)
-        weekly_burn         = student_model.get("weekly_burn_rate", 0)
-        safe_discretionary  = student_model.get("safe_discretionary_ngn", 0)
-        status_message      = student_model.get("status_message", "")
-        behavioral          = student_model.get("behavioral", {})
-        primary_directive   = behavioral.get("primary_directive", "")
+        agent_mode = student_model.get("agent_mode", "NORMAL")
+        survival_score = student_model.get("survival_score", 50)
+        free_cash = student_model.get("free_cash", kelly.get("hold_ngn", 0))
+        weeks_of_runway = student_model.get("weeks_of_runway", 30)
+        weeks_to_fee = student_model.get("weeks_to_fee_deadline", 999)
+        fee_amount = student_model.get("fee_amount_due", 0)
+        fee_gap = student_model.get("fee_gap_ngn", 0)
+        weekly_burn = student_model.get("weekly_burn_rate", 0)
+        safe_discretionary = student_model.get("safe_discretionary_ngn", 0)
+        status_message = student_model.get("status_message", "")
+        behavioral = student_model.get("behavioral", {})
+        primary_directive = behavioral.get("primary_directive", "")
 
-        # Verdict (student-friendly labels)
         raw_verdict = kelly.get("verdict", "HOLD")
         verdict_map = {
-            "INVEST":       "SPEND SAFELY",
+            "INVEST": "SPEND SAFELY",
             "SPEND_SAFELY": "SPEND SAFELY",
-            "SAVE":         "PROTECT YOUR MONEY",
-            "PROTECT":      "PROTECT YOUR MONEY",
-            "HOLD":         "HOLD — DON'T SPEND",
+            "SAVE": "PROTECT YOUR MONEY",
+            "PROTECT": "PROTECT YOUR MONEY",
+            "HOLD": "HOLD — DON'T SPEND",
         }
-        verdict    = verdict_map.get(raw_verdict, raw_verdict)
+        verdict = verdict_map.get(raw_verdict, raw_verdict)
         spend_safe = kelly.get("invest_ngn", kelly.get("spend_safely_ngn", 0))
-        protect    = kelly.get("save_ngn", kelly.get("protect_ngn", 0))
+        protect = kelly.get("save_ngn", kelly.get("protect_ngn", 0))
 
-        bias_name    = bias.get("active_bias", bias.get("bias", "Rational"))
+        bias_name = bias.get("active_bias", bias.get("bias", "Rational"))
         bias_explain = bias.get("explanation", "")
-        student_tip  = bias.get("student_tip", "")
+        student_tip = bias.get("student_tip", "")
         stress_score = stress.get("score", 50)
         market_title = bayse.get("market_title", "Nigerian financial market")
 
-        # Urgency prefix
         urgency_block = ""
         if agent_mode == "EMERGENCY":
-            urgency_block = f"🚨 URGENT: Student is in EMERGENCY mode — money runs out in {weeks_of_runway:.1f} weeks."
+            urgency_block = (
+                f"🚨 URGENT: Student is in EMERGENCY mode — money runs out in "
+                f"{weeks_of_runway:.1f} weeks."
+            )
         elif agent_mode == "SURVIVAL":
             urgency_block = f"⚠️ SURVIVAL: Student may miss fee payment. Gap: ₦{fee_gap:,.0f}."
 
@@ -197,25 +230,26 @@ RETURN ONLY VALID JSON. No markdown. No backticks.
 
     def _build_question_prompt(self, question: str, context: Dict[str, Any]) -> str:
         student_model = context.get("student_model", {})
-        kelly         = context.get("allocation", context)
-        stress        = context.get("stress", {})
-        bias          = context.get("bias", {})
-        bayse         = context.get("bayse", {})
+        kelly = context.get("allocation", context)
+        stress = context.get("stress", {})
+        bias = context.get("bias", {})
 
-        free_cash    = student_model.get("free_cash", float(context.get("free_cash", 0)))
-        runway       = student_model.get("weeks_of_runway", 30)
-        weekly_burn  = student_model.get("weekly_burn_rate", float(context.get("weekly_burn_rate", 0)))
-        fee_due      = student_model.get("fee_amount_due", float(context.get("upcoming_obligations", 0)))
-        safe_spend   = student_model.get("safe_discretionary_ngn", 0)
-        agent_mode   = student_model.get("agent_mode", "NORMAL")
-        protect      = kelly.get("save_ngn", kelly.get("protect_ngn", 0))
+        free_cash = student_model.get("free_cash", float(context.get("free_cash", 0)))
+        runway = student_model.get("weeks_of_runway", 30)
+        weekly_burn = student_model.get("weekly_burn_rate", float(context.get("weekly_burn_rate", 0)))
+        fee_due = student_model.get("fee_amount_due", float(context.get("upcoming_obligations", 0)))
+        safe_spend = student_model.get("safe_discretionary_ngn", 0)
+        agent_mode = student_model.get("agent_mode", "NORMAL")
+        protect = kelly.get("save_ngn", kelly.get("protect_ngn", 0))
         stress_score = stress.get("score", context.get("stress_index", 50))
-        bias_name    = bias.get("active_bias", bias.get("bias", "Rational"))
+        bias_name = bias.get("active_bias", bias.get("bias", "Rational"))
 
         raw_verdict = kelly.get("verdict", "HOLD")
         verdict_map = {
-            "INVEST": "SPEND SAFELY", "SPEND_SAFELY": "SPEND SAFELY",
-            "SAVE": "PROTECT YOUR MONEY", "PROTECT": "PROTECT YOUR MONEY",
+            "INVEST": "SPEND SAFELY",
+            "SPEND_SAFELY": "SPEND SAFELY",
+            "SAVE": "PROTECT YOUR MONEY",
+            "PROTECT": "PROTECT YOUR MONEY",
             "HOLD": "HOLD — DON'T SPEND",
         }
         verdict = verdict_map.get(raw_verdict, raw_verdict)
@@ -245,10 +279,20 @@ Instructions:
     # ── Gemini helpers ────────────────────────────────────────────
 
     @staticmethod
-    def _extract_text(response) -> str:
+    def _extract_text(response: Any) -> str:
         text = getattr(response, "text", None)
         if text:
-            return text.strip()
+            return str(text).strip()
+
+        parsed = getattr(response, "parsed", None)
+        if parsed is not None:
+            try:
+                if isinstance(parsed, BaseModel):
+                    return json.dumps(parsed.model_dump(), ensure_ascii=False)
+                return json.dumps(parsed, ensure_ascii=False)
+            except Exception:
+                pass
+
         try:
             return response.candidates[0].content.parts[0].text.strip()
         except Exception:
@@ -268,22 +312,32 @@ Instructions:
         start = text.find("{")
         if start == -1:
             return ""
-        depth, in_str, escape = 0, False, False
+
+        depth = 0
+        in_str = False
+        escape = False
+
         for i in range(start, len(text)):
             ch = text[i]
             if escape:
-                escape = False; continue
+                escape = False
+                continue
             if ch == "\\":
-                escape = True; continue
+                escape = True
+                continue
             if ch == '"':
-                in_str = not in_str; continue
+                in_str = not in_str
+                continue
             if in_str:
                 continue
-            if ch == "{": depth += 1
+
+            if ch == "{":
+                depth += 1
             elif ch == "}":
                 depth -= 1
                 if depth == 0:
-                    return text[start:i + 1]
+                    return text[start : i + 1]
+
         return ""
 
     @staticmethod
@@ -296,34 +350,51 @@ Instructions:
     @staticmethod
     def _fallback() -> Dict[str, Any]:
         return {
-            "summary": None, "reasoning": None, "action": None,
-            "what_this_means_for_you": None, "bias_explanation": None,
+            "summary": None,
+            "reasoning": None,
+            "action": None,
+            "what_this_means_for_you": None,
+            "bias_explanation": None,
             "confidence_note": "AI explanation temporarily unavailable.",
-            "bq_alert": None, "context_summary": None,
+            "bq_alert": None,
+            "context_summary": None,
         }
 
     async def _call_json(self, prompt: str) -> CopilotResult:
-        config = GenerateContentConfig(
+        config = types.GenerateContentConfig(
             system_instruction=f"{self.SYSTEM_PROMPT}\n\n{self.JSON_SYSTEM_PROMPT}",
             temperature=0.2,
             max_output_tokens=2048,
             response_mime_type="application/json",
-            response_schema=self._response_schema(),
+            response_schema=CopilotResult,
         )
+
         response = await self.client.aio.models.generate_content(
-            model=self.model, contents=prompt, config=config,
+            model=self.model,
+            contents=prompt,
+            config=config,
         )
+
         text = self._extract_text(response)
+        if not text and getattr(response, "parsed", None) is not None:
+            try:
+                parsed = response.parsed
+                return parsed if isinstance(parsed, CopilotResult) else CopilotResult.model_validate(parsed)
+            except Exception:
+                pass
+
         if not text:
             return CopilotResult(confidence_note="AI explanation temporarily unavailable.")
+
         try:
             return self._parse_json(text)
         except Exception as e:
             logger.warning("[Copilot] JSON parse failed, retrying: %s", e)
-            repair_cfg = GenerateContentConfig(
+            repair_cfg = types.GenerateContentConfig(
                 system_instruction=f"{self.SYSTEM_PROMPT}\n\n{self.JSON_SYSTEM_PROMPT}",
                 temperature=0.0,
                 response_mime_type="application/json",
+                response_schema=CopilotResult,
             )
             try:
                 r2 = await self.client.aio.models.generate_content(
@@ -331,21 +402,29 @@ Instructions:
                     contents=f"Fix this into valid JSON only:\n{text}",
                     config=repair_cfg,
                 )
+
+                if getattr(r2, "parsed", None) is not None:
+                    parsed = r2.parsed
+                    return parsed if isinstance(parsed, CopilotResult) else CopilotResult.model_validate(parsed)
+
                 return self._parse_json(self._extract_text(r2))
             except Exception:
                 return CopilotResult(confidence_note="AI explanation temporarily unavailable.")
 
     async def _call_text(self, prompt: str) -> str:
-        config = GenerateContentConfig(
+        config = types.GenerateContentConfig(
             system_instruction=self.SYSTEM_PROMPT,
             temperature=0.3,
             max_output_tokens=400,
         )
+
         response = await self.client.aio.models.generate_content(
-            model=self.model, contents=prompt, config=config,
+            model=self.model,
+            contents=prompt,
+            config=config,
         )
+
         raw = self._extract_text(response).strip()
-        # If Gemini returns JSON despite text mode, extract the answer field
         if raw.startswith("{"):
             try:
                 data = json.loads(self._extract_first_json(raw))
@@ -353,6 +432,13 @@ Instructions:
             except Exception:
                 pass
         return raw
+
+    async def aclose(self) -> None:
+        """Close the async client cleanly."""
+        try:
+            await self.client.aio.aclose()
+        except Exception:
+            pass
 
     # ── public entry points ───────────────────────────────────────
 
@@ -373,3 +459,20 @@ Instructions:
         except Exception as e:
             logger.error("[Copilot] answer_question() failed: %s", e)
             return "Unable to answer right now. Check your dashboard."
+
+
+# Optional simple helper for direct use
+async def run_copilot(data: Dict[str, Any]) -> Dict[str, Any]:
+    copilot = ZeltaCopilot()
+    try:
+        return await copilot.run(data)
+    finally:
+        await copilot.aclose()
+
+
+async def answer_copilot_question(question: str, context: Dict[str, Any]) -> str:
+    copilot = ZeltaCopilot()
+    try:
+        return await copilot.answer_question(question, context)
+    finally:
+        await copilot.aclose()
