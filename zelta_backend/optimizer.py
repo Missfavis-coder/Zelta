@@ -675,7 +675,6 @@ def normalise_brain_response(raw_data: dict) -> dict:
     }
 
 
-
 def _fallback_bayse() -> dict:
     return {
         "score": 50.0,
