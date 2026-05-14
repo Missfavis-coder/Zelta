@@ -225,9 +225,64 @@ async def ask_copilot(
         }
 
 
+from brain.tools.hustle_templates import get_hustle_templates, HUSTLE_CATALOG
+
+
 # =========================
-# PUBLIC ENDPOINTS
+# HUSTLE TEMPLATES ENDPOINT
 # =========================
+
+class HustleTemplateRequest(BaseModel):
+    agent_mode: str = Field(default="NORMAL", description="EMERGENCY | SURVIVAL | NORMAL")
+    free_cash:  float = Field(default=0.0, ge=0)
+
+
+@router.get("/hustle-templates")
+async def get_hustle_templates_endpoint(
+    agent_mode: str = "NORMAL",
+    free_cash: float = 0.0,
+    _: None = Depends(verify_internal_request),
+):
+    """
+    Fix 8: Returns campus hustle templates filtered by the student's
+    current agent mode and available free cash.
+
+    Query params:
+      - agent_mode: EMERGENCY | SURVIVAL | NORMAL  (default: NORMAL)
+      - free_cash:  student's current free cash in NGN (default: 0)
+    """
+    try:
+        student_model = {
+            "agent_mode": agent_mode.upper(),
+            "free_cash":  free_cash,
+        }
+        result = get_hustle_templates.invoke({"student_model": student_model})
+        return {
+            "success": True,
+            "agent_mode": agent_mode.upper(),
+            "free_cash": free_cash,
+            "count": len(HUSTLE_CATALOG),
+            "recommendations": result,
+        }
+    except Exception as exc:
+        logger.exception("get_hustle_templates_endpoint failed: %s", exc)
+        return {
+            "success": False,
+            "error": str(exc),
+            "recommendations": "",
+        }
+
+
+@router.post("/hustle-templates")
+async def post_hustle_templates_endpoint(
+    request: HustleTemplateRequest,
+    _: None = Depends(verify_internal_request),
+):
+    """POST variant — accepts body instead of query params."""
+    return await get_hustle_templates_endpoint(
+        agent_mode=request.agent_mode,
+        free_cash=request.free_cash,
+    )
 
 @public_router.get("/api/stress")
 async def get_stress():

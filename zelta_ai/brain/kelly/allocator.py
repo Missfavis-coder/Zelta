@@ -134,6 +134,32 @@ class ZeltaKellyAllocator:
         free_cash     = wallet_data.get("free_cash", 0.0)
         total_balance = wallet_data.get("total_balance", free_cash)
 
+        # Fix 4: survival_mode / emergency_mode guard from student_model
+        student_model  = wallet_data.get("student_model", {})
+        agent_mode     = student_model.get("agent_mode", "NORMAL")
+        emergency_mode = student_model.get("emergency_mode", False)
+        survival_mode  = student_model.get("survival_mode", False)
+        weeks_runway   = student_model.get("weeks_of_runway", 30)
+
+        # EMERGENCY: hard block — hold everything, no allocation
+        if emergency_mode or agent_mode == "EMERGENCY":
+            return self._response(
+                "HOLD", 0, 0, free_cash, 0,
+                f"⚠️ EMERGENCY: Money runs out in {weeks_runway:.1f} weeks. "
+                "Hold all funds. Cut non-essential spending immediately."
+            )
+
+        # SURVIVAL: force protect mode — no discretionary spending allowed
+        if survival_mode or agent_mode == "SURVIVAL":
+            save_amount = self.calculate_save_amount(free_cash, max(int(stress_score), 70))
+            hold_amount = max(0.0, free_cash - save_amount)
+            pct = round((save_amount / free_cash) * 100, 1) if free_cash > 0 else 0
+            return self._response(
+                "SAVE", 0, save_amount, hold_amount, pct,
+                f"SURVIVAL mode. Protect ₦{save_amount:,.0f}. "
+                f"Keep ₦{hold_amount:,.0f} for essentials only."
+            )
+
         # ── HARD SAFETY LAYER ─────────────────────────────────────
 
         if free_cash <= 0:

@@ -491,14 +491,33 @@ def _normalise_confidence(raw: dict) -> dict:
 
 def _normalise_allocation(raw: dict) -> dict:
     raw = raw or {}
+    verdict      = _safe_str(raw.get("verdict", "HOLD"), "HOLD")
+    invest_ngn   = _safe_float(raw.get("invest_ngn", raw.get("invest_amount", 0.0)))
+    save_ngn     = _safe_float(raw.get("save_ngn",   raw.get("save_amount",   0.0)))
+    hold_ngn     = _safe_float(raw.get("hold_ngn",   raw.get("hold_amount",   0.0)))
+
+    # Map investment-era verdicts to student-friendly labels
+    verdict_map = {
+        "INVEST":       "SPEND_SAFELY",
+        "SAVE":         "PROTECT",
+    }
+    student_verdict = verdict_map.get(verdict, verdict)
+
     return {
-        "verdict": _safe_str(raw.get("verdict", "HOLD"), "HOLD"),
-        "invest_amount": _safe_float(raw.get("invest_ngn", raw.get("invest_amount", 0.0))),
-        "save_amount": _safe_float(raw.get("save_ngn", raw.get("save_amount", 0.0))),
-        "hold_amount": _safe_float(raw.get("hold_ngn", raw.get("hold_amount", 0.0))),
-        "allocation_pct": _safe_float(raw.get("allocation_pct", 0.0)),
-        "allocator_notes": _safe_str(raw.get("allocator_notes", ""), ""),
-        "plain_english": _safe_str(raw.get("plain_english", ""), ""),
+        "verdict":            verdict,                  # raw (backward compat)
+        "student_verdict":    student_verdict,          # student-friendly label
+        "invest_amount":      invest_ngn,
+        "save_amount":        save_ngn,
+        "hold_amount":        hold_ngn,
+        "invest_ngn":         invest_ngn,               # alias
+        "save_ngn":           save_ngn,                 # alias
+        "hold_ngn":           hold_ngn,                 # alias
+        "spend_safely_ngn":   invest_ngn,               # student alias
+        "protect_ngn":        save_ngn,                 # student alias
+        "buffer_ngn":         hold_ngn,                 # student alias
+        "allocation_pct":     _safe_float(raw.get("allocation_pct", 0.0)),
+        "allocator_notes":    _safe_str(raw.get("allocator_notes", ""), ""),
+        "plain_english":      _safe_str(raw.get("plain_english", ""), ""),
     }
 
 
@@ -639,16 +658,22 @@ def normalise_brain_response(raw_data: dict) -> dict:
         }
 
     return {
-        "bayse": _normalise_bayse(raw_data.get("bayse", {})),
-        "nlp": raw_data.get("nlp", {}),
-        "stress": _normalise_stress(raw_data.get("stress", {})),
-        "bias": _normalise_bias(raw_data.get("bias", {})),
-        "decision": _normalise_decision(raw_data.get("decision", {})),
-        "confidence": _normalise_confidence(raw_data.get("confidence", {})),
-        "allocation": _normalise_allocation(raw_data.get("allocation", {})),
-        "score": _normalise_score(raw_data.get("score", {})),
-        "explanation": _safe_dict(raw_data.get("explanation", {})),
+        "bayse":        _normalise_bayse(raw_data.get("bayse", {})),
+        "nlp":          raw_data.get("nlp", {}),
+        "stress":       _normalise_stress(raw_data.get("stress", {})),
+        "bias":         _normalise_bias(raw_data.get("bias", {})),
+        "decision":     _normalise_decision(raw_data.get("decision", {})),
+        "confidence":   _normalise_confidence(raw_data.get("confidence", {})),
+        "allocation":   _normalise_allocation(raw_data.get("allocation", {})),
+        "score":        _normalise_score(raw_data.get("score", {})),
+        "explanation":  _safe_dict(raw_data.get("explanation", {})),
+        # Pass student_model through so intelligence_service + copilot_service can use it
+        "student_model": _safe_dict(raw_data.get("student_model", {})),
+        # Tool outputs — surfaced to frontend via hustle/purchase fields
+        "hustle_recommendations":  raw_data.get("hustle_recommendations"),
+        "purchase_safety_check":   raw_data.get("purchase_safety_check"),
     }
+
 
 
 def _fallback_bayse() -> dict:

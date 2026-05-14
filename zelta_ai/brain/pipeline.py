@@ -118,8 +118,27 @@ class ZeltaPipeline:
                 user_context=user_context,
             )
 
+            # Map agent_result keys to the shape copilot.run() expects:
+            #   copilot expects: bayse, stress, bias, decision, allocation, wallet_data, student_model
+            #   agent_result has: bayse, stress, bias, decision, allocation, student_model  ✓
+            # The only mismatch is that pipeline.py previously called copilot with
+            # the raw agent_result — but copilot.run() reads agent_result["allocation"]
+            # and agent_result["decision"] which exist. Pass it directly.
+            copilot_input = {
+                "bayse":        agent_result.get("bayse", {}),
+                "nlp":          agent_result.get("nlp", {}),
+                "stress":       agent_result.get("stress", {}),
+                "bias":         agent_result.get("bias", {}),
+                "decision":     agent_result.get("decision", {}),
+                "confidence":   agent_result.get("confidence", {}),
+                "allocation":   agent_result.get("allocation", {}),
+                "score":        agent_result.get("score", {}),
+                "student_model":agent_result.get("student_model", {}),
+                "wallet_data":  wallet_data,   # pass enriched wallet for survival signals
+            }
+
             # Generate explanation using copilot
-            explanation = await self.copilot.run(agent_result)
+            explanation = await self.copilot.run(copilot_input)
             explanation = _to_dict(explanation)
 
             latency = round(time.time() - start_time, 3)
