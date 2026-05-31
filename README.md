@@ -1,119 +1,202 @@
-# ZELTA — Behavioral Quantitative Financial Intelligence
+<div align="center">
 
-> **Stop making financial decisions on emotion. Let the math decide. In plain English.**
+# ZELTA
+### The Anti-Sapa App for Nigerian University Students
 
-ZELTA is the Anti-Sapa App for Nigerian university students. It uses Bayesian inference, crowd intelligence from Bayse Markets, and Gemini AI to detect financial stress in real time and intercept emotional spending before it happens.
+**Stop going broke mid-semester. Let the math decide what to do with your money.**
+
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-zelta.app-10b981?style=for-the-badge)](https://zelta-878473667930.europe-west1.run.app)
+[![Backend API](https://img.shields.io/badge/API%20Docs-Swagger-orange?style=for-the-badge)](https://zelta-878473667930.us-central1.run.app/docs)
+[![Built with Gemini](https://img.shields.io/badge/Built%20with-Gemini%201.5%20Pro-4285F4?style=for-the-badge&logo=google)](https://ai.google.dev)
+[![Powered by Bayse](https://img.shields.io/badge/Powered%20by-Bayse%20Markets-f97316?style=for-the-badge)](https://bayse.io)
+
+</div>
+
+---
+
+## What is ZELTA?
+
+Nigerian university students receive money in lump sums — allowances, bursaries, parent transfers. By week two, it is usually gone. Not because students are careless. Because no tool has ever watched how they spend, detected when they are making an emotional decision, and stopped them before it was too late.
+
+ZELTA does exactly that.
+
+It reads live market sentiment from Bayse prediction markets, detects your active cognitive bias from your spending patterns, and tells you one thing every week: **how much is safe to spend, how much to protect, and how many days your money will last.**
+
+When you are about to make a dangerous spending decision, ZELTA intercepts it before the money leaves.
+
+> **This is not a prototype. ZELTA is live and deployed at a public URL today.**
+
+---
+
+## The Problem We Solve
+
+| The Problem | What Causes It | What ZELTA Does |
+|---|---|---|
+| Running out of money mid-semester (*Sapa*) | Irregular lump-sum income + no velocity tracking | Runway counter — shows exactly how many days your money will last |
+| Impulse spending under stress | Exam pressure + peer influence impairs decisions | Intercept screen — blocks dangerous purchases before they happen |
+| Following peers into bad financial decisions | Herd behaviour + no independent signal | Bayse crowd fear signal — shows when the crowd is panicking irrationally |
+| Starting a campus business and losing everything | No risk modelling framework | Bayesian Monte Carlo simulator — runs 1,000 projections before you commit |
+| Not knowing where your money went | Manual tracking is tedious | Gemini-powered co-pilot — ask anything, get a personalised answer in plain English |
 
 ---
 
 ## What's Actually Built
 
-This repo is a monorepo with three independently deployable services:
+This is a monorepo with three independently deployed services:
 
 | Service | Path | Stack | Role |
 |---|---|---|---|
-| **ZELTA AI Brain** | `zelta_ai/` | FastAPI + LangGraph + Gemini | Multi-agent intelligence layer |
-| **ZELTA Backend** | `zelta_backend/` | FastAPI + Firebase + Vertex AI | Data, auth, wallet, portfolio |
-| **ZELTA Frontend** | `/` (root) | Next.js 16 + React 19 + Tailwind | Student-facing web app |
+| **ZELTA Frontend** | `/` (root) | Next.js 15 · React · Tailwind CSS · TypeScript | Student-facing web app |
+| **ZELTA Backend** | `zelta_backend/` | FastAPI · Firebase · Vertex AI · Python 3.11 | Data, auth, wallet, portfolio, behavioral analysis |
+| **ZELTA AI Brain** | `zelta_ai/` | FastAPI · LangGraph · Gemini 1.5 Pro · Python 3.11 | Multi-agent intelligence and decision engine |
 
 ---
 
 ## Architecture
 
 ```
-Student Request
-      │
-      ▼
-┌─────────────┐     ┌──────────────────────────────────────────┐
-│  Next.js    │────▶│           ZELTA Backend (FastAPI)         │
-│  Frontend   │     │  /intelligence  /wallet  /behavioral      │
-└─────────────┘     │  /simulation    /copilot /portfolio       │
-                    └────────────────────┬─────────────────────┘
-                                         │ internal API key
-                                         ▼
-                    ┌──────────────────────────────────────────┐
-                    │         ZELTA AI Brain (FastAPI)          │
-                    │                                           │
-                    │  ZeltaPipeline → LangGraph AgentLoop      │
-                    │                                           │
-                    │  ┌──────────┐  ┌──────────┐             │
-                    │  │  Bayse   │  │  NLP     │             │
-                    │  │  Markets │  │  Scraper │             │
-                    │  └────┬─────┘  └────┬─────┘             │
-                    │       └──────┬───────┘                   │
-                    │        ┌─────▼──────┐                    │
-                    │        │  Stress    │                    │
-                    │        │  Index     │                    │
-                    │        └─────┬──────┘                    │
-                    │        ┌─────▼──────┐                    │
-                    │        │  Bayesian  │                    │
-                    │        │  Engine    │                    │
-                    │        └─────┬──────┘                    │
-                    │        ┌─────▼──────┐                    │
-                    │        │  Kelly     │                    │
-                    │        │  Allocator │                    │
-                    │        └─────┬──────┘                    │
-                    │        ┌─────▼──────┐                    │
-                    │        │  Gemini    │                    │
-                    │        │  Copilot   │                    │
-                    │        └────────────┘                    │
-                    └──────────────────────────────────────────┘
-                                         │
-                              ┌──────────▼──────────┐
-                              │   Firebase Firestore  │
-                              │   Google Cloud Run    │
-                              │   Vertex AI           │
-                              └─────────────────────┘
+Student Opens App
+       │
+       ▼
+┌─────────────────┐
+│  Next.js 15     │  ← Firebase Auth (session cookie)
+│  Frontend       │  ← TypeScript hooks → typed API responses
+└────────┬────────┘
+         │ Bearer token (Firebase ID token)
+         ▼
+┌─────────────────────────────────────────────────────┐
+│              ZELTA Backend  (FastAPI)                │
+│                                                     │
+│  /api/intelligence   /api/wallet    /api/behavioral │
+│  /api/simulation     /api/copilot   /api/portfolio  │
+│  /api/profile        /api/bayse     /api/stress     │
+└────────────────────────┬────────────────────────────┘
+                         │ Internal API key
+                         ▼
+┌─────────────────────────────────────────────────────┐
+│              ZELTA AI Brain  (FastAPI)               │
+│                                                     │
+│         ZeltaPipeline → LangGraph AgentLoop         │
+│                                                     │
+│   Bayse Markets ──► Stress Index ──► Bayesian       │
+│   NLP Scraper   ──► Bias Detector ──► Engine        │
+│   Student Model ──► Kelly Allocator ──► Copilot     │
+│                                                     │
+│   EMERGENCY mode │ SURVIVAL mode │ NORMAL mode      │
+└────────────────────────┬────────────────────────────┘
+                         │
+              ┌──────────▼──────────┐
+              │  Firebase Firestore  │
+              │  Google Cloud Run    │
+              │  Vertex AI           │
+              └─────────────────────┘
 ```
 
 ---
 
-## The BQ Framework — 4 Layers
+## The BQ Intelligence Framework
 
-### Layer 1 — Bayse Intelligence
-Pulls live order book data from Bayse Markets (REST + WebSockets). The `LiveStressMonitor` in `zelta_ai/brain/bayse/stress_signal.py` runs a background polling loop, computing a **Crowd Fear Score** from YES/NO price imbalance and bid-ask spread.
+ZELTA's brain runs in four sequential layers. Each layer feeds the next.
 
-```
-Stress Score = (distance × 0.7 + spread × 0.3) × 100
-```
-
-Levels: `CALM` (0–30) → `MODERATE` (30–60) → `HIGH STRESS` (60–80) → `EXTREME PANIC` (80+)
-
-### Layer 2 — Stress Detector
-Combines market stress with NLP sentiment from campus news scraping (`zelta_ai/brain/nlp/`). Uses a `cardiffnlp/twitter-roberta-base-sentiment-latest` transformer model pre-loaded in the Docker image. Outputs a composite stress index.
-
-### Layer 3 — Bayesian Bias Corrector
-Detects **Panic Selling** and **FOMO Buying** patterns in transaction history (`zelta_ai/brain/bias/detector.py`). Applies posterior probability corrections via the Bayesian engine (`zelta_ai/brain/bayesian/engine.py`) to upcoming allocation decisions.
-
-### Layer 4 — Quant Allocator
-Modified Kelly Criterion with an academic time-decay modifier **λt**:
+### Layer 1 — Bayse Market Intelligence
+Connects to [Bayse Markets](https://bayse.io) via REST and WebSocket. A background monitor (`zelta_ai/brain/bayse/stress_signal.py`) continuously computes a **Crowd Fear Score** from the live YES/NO price imbalance and bid-ask spread.
 
 ```
-f* = (λt × b×p − q) / b
+Crowd Fear Score = (price_distance_from_0.5 × 0.7 + spread × 0.3) × 100
 
-where λt = 1 − (days_to_exam / semester_length)
+CALM        0 – 30    Market behaving rationally
+MODERATE   30 – 60    Some tension, stay cautious
+HIGH       60 – 80    Significant crowd panic
+EXTREME    80 – 100   Full fear — hold all money
 ```
 
-λt reduces capital exposure as exams approach — this factor is novel to student fintech. Implemented in `zelta_ai/brain/kelly/allocator.py`.
+### Layer 2 — Composite Stress Index
+Fuses the Bayse fear score with NLP sentiment extracted from Nigerian financial news headlines (via `cardiffnlp/twitter-roberta-base-sentiment-latest`). Produces a single 0–100 stress index that represents the actual financial environment a student is operating in right now.
+
+### Layer 3 — Behavioral Bias Detector
+Analyses the student's real transaction history and detects which of five cognitive biases is currently active:
+
+| Bias | Student form | What triggers it |
+|---|---|---|
+| **Present Bias** | Spending rent money on food today | Impulse purchase while obligation is due |
+| **Loss Aversion** | Panic-withdrawing cash when stressed | Cash withdrawal during high stress |
+| **Mental Accounting** | Treating side hustle money as "extra" | Spending spike after income receipt |
+| **Herd Behaviour** | Following friends into mass purchases | Spending cluster matching peer patterns |
+| **Overconfidence** | Overspending when market is calm | Spending surge during low-stress period |
+
+### Layer 4 — Modified Kelly Allocator
+Calculates the mathematically optimal spending and saving split using a student-specific Kelly formula with an **academic time-decay modifier (λt)**:
+
+```
+f* = λt × (b·p − q) / b
+
+where:
+  b  = expected return ratio
+  p  = probability of safe outcome (from Bayesian engine)
+  q  = 1 − p
+  λt = 1 − (days_to_exam / semester_length)   ← novel student factor
+```
+
+`λt` automatically reduces capital exposure as exams approach — shifting ZELTA from opportunity mode to preservation mode without any user input. This factor is novel to student fintech.
 
 ---
 
-## LangGraph Agent Loop
+## The LangGraph Agent Loop
 
-`zelta_ai/brain/agent/loop.py` — the full `StateGraph`:
+`zelta_ai/brain/agent/loop.py` runs a full stateful `StateGraph` with mode-based routing:
 
 ```
-StudentModel → [BayseData, NLPData] → StressIndex → BiasDetection
-            → BayesianEngine → ConfidenceScorer → KellyAllocator
-            → SharpeScorer → Copilot → Output
+StudentModel
+     │
+     ├── EMERGENCY ──► emergency_tools_node ──► check_purchase_safety
+     │                                       └► get_hustle_templates
+     │
+     ├── SURVIVAL ───► survival_tools_node ───► check_purchase_safety
+     │                                       └► get_hustle_templates
+     │
+     └── NORMAL ─────► [fetch_market_data] ──► [run_stress_index]
+                     ──► [detect_bias] ────────► [run_bayesian_engine]
+                     ──► [run_confidence] ───────► [run_kelly]
+                     ──► [run_sharpe] ─────────────► [run_copilot]
+                     ──► [guardrail_reflection] ────► Output
 ```
 
-The agent routes by `agent_mode` computed from the student model:
-- `EMERGENCY` — runway critically low, spending freeze
-- `SURVIVAL` — below safety floor, conservative allocation
-- `NORMAL` — standard BQ analysis
+The guardrail reflection node validates Gemini's output against financial safety rules before it reaches the student. If it fails, it re-routes and regenerates.
 
-Guardrail reflection is wired before final output — if Gemini's response fails validation it re-routes.
+---
+
+## Key Features
+
+### Sapa Health Bar
+Visual survival score — the first thing a student sees on the dashboard. Computed from free cash, runway, bias strength, and market stress. Green above 60%, amber 30–60%, red below 30%. Shows the exact number of days money will last at the current spending pace.
+
+### Intercept Screen
+Before any expense that would drop runway below 7 days or cost more than 20% of free cash, ZELTA blocks the screen:
+> *"Chief, this drops your runway from 14 days to 9 days. Your 4-day streak will break. Are you sure?"*
+
+The student can cancel (streak protected) or proceed anyway (flagged as `impulse_flagged: true` and fed to the bias detector as real evidence).
+
+### Zé — Autonomous Agent
+ZELTA's AI character proactively pushes alerts without the student asking:
+- When runway drops below 7 days
+- When Bayse fear spikes above 70%
+- When a spending pattern matches an active bias
+- When a new campus gig matches the student's skills
+- After streak milestones
+
+Zé is not just a chatbot — it monitors and acts.
+
+### What If? Simulator
+Runs 1,000 Bayesian Monte Carlo projections on a side hustle idea before the student commits money. Takes inputs (investment amount, expected revenue range, fixed costs, time horizon), applies the Kelly formula, and returns a probabilistic outcome with success probability, expected return, and a verdict: Go For It / Hold / Protect Your Money.
+
+### Floating Co-Pilot
+Available on every dashboard page. Answers plain-English questions with the student's actual financial situation pre-loaded as context:
+- "Will my money last till month end?"
+- "Can I afford to go out this weekend?"
+- "My mum sent ₦15,000 — what do I do first?"
+
+### Decision History
+Logs every ZELTA recommendation with its outcome. Tracks accuracy rate, net P&L (vs doing nothing), and shows which decisions were CORRECT, INCORRECT, or still TRACKING.
 
 ---
 
@@ -121,66 +204,109 @@ Guardrail reflection is wired before final output — if Gemini's response fails
 
 ```
 ZELTA/
-├── app/                        # Next.js frontend (App Router)
-│   ├── auth/                   # Login + Signup pages
-│   ├── dashboard/              # Main student dashboard
-│   │   ├── behavioral/         # Bias analysis UI
-│   │   ├── co-pilot/           # Gemini chat interface
-│   │   ├── simulations/        # What-if financial scenarios
-│   │   └── wallet/             # Wallet + transactions
-│   ├── form/                   # Onboarding form
-│   └── page.tsx                # Landing page
-├── components/
-│   ├── Button.tsx
-│   ├── IntroTab.tsx
-│   └── PageHeader.tsx
 │
-├── zelta_ai/                   # AI Brain service (deploy separately)
-│   ├── main.py                 # FastAPI entry point, Bayse monitor lifespan
-│   ├── security.py             # Internal API key verification
-│   ├── api/routes.py           # /brain/v1/* and /api/* endpoints
+├── app/                            # Next.js frontend (App Router)
+│   ├── (auth)/                     # Login + Signup pages
+│   │   ├── login/
+│   │   └── sign-up/
+│   ├── dashboard/                  # All authenticated pages
+│   │   ├── behavioral/             # Bias analysis + 8-week pattern
+│   │   │   └── components/         # bayse, active, decision, five, weeks, zelta
+│   │   ├── co-pilot/               # Gemini chat interface
+│   │   ├── history/                # Decision history + accuracy tracking
+│   │   ├── profile/                # Student profile + settings
+│   │   ├── simulations/            # What-if financial simulator
+│   │   │   └── components/         # SimulationResults
+│   │   ├── wallet/                 # Wallet, transactions, locked goals
+│   │   ├── BiasAlertCard.tsx
+│   │   ├── DecisionScoreCard.tsx
+│   │   ├── MarketAlert.tsx
+│   │   ├── StressIndexCard.tsx
+│   │   ├── WeeklyVerdictCard.tsx
+│   │   ├── Sidebar.tsx
+│   │   ├── dashboard.tsx
+│   │   └── layout.tsx
+│   ├── form/                       # Onboarding form (new student setup)
+│   └── page.tsx                    # Landing page
+│
+├── components/                     # Shared components
+│   ├── FloatingCopilot.tsx         # Persistent Zé chat on every page
+│   ├── SurvivalBanner.tsx          # Emergency/survival mode alert
+│   ├── DashboardHeader.tsx
+│   ├── OnboardingOverlay.tsx
+│   ├── PageHeader.tsx
+│   └── ui/                         # State, button, error components
+│
+├── context/
+│   ├── authContext.tsx             # Firebase Auth + session cookie
+│   ├── zeltaContext.tsx            # Global dashboard data provider
+│   └── BehavioralSnapshotContext.tsx
+│
+├── hooks/
+│   ├── useFetch.ts                 # Authenticated apiFetch utility
+│   └── zelta.ts                   # All data hooks (useWallet, useStress, etc.)
+│
+├── types/
+│   └── zelta.ts                   # Full TypeScript type definitions
+│
+├── firebase/                       # Firebase client init
+│
+│
+├── zelta_ai/                       # AI Brain service — deploy separately
+│   ├── main.py                     # FastAPI app + Bayse monitor lifespan
+│   ├── security.py                 # Internal API key verification
+│   ├── api/routes.py               # /brain/v1/* endpoints
+│   ├── app/router.py               # Legacy router (no-op, see api/routes.py)
 │   ├── brain/
 │   │   ├── agent/
-│   │   │   ├── loop.py         # LangGraph StateGraph (core)
-│   │   │   └── student_model.py
-│   │   ├── bayesian/           # Bayesian engine + confidence
-│   │   ├── bayse/              # Bayse Markets client + stress monitor
-│   │   ├── bias/               # FOMO/panic bias detector
-│   │   ├── copilot/            # Gemini 1.5 Pro integration
-│   │   ├── kelly/              # Modified Kelly with λt
-│   │   ├── nlp/                # Sentiment scraper + scorer
-│   │   ├── sharpe/             # Decision quality scorer
-│   │   ├── stress/             # Composite stress index
-│   │   └── tools/              # Hustle templates, spending guard
+│   │   │   ├── loop.py             # LangGraph StateGraph — core agent
+│   │   │   └── student_model.py    # ZeltaStudentModel: survival signals
+│   │   ├── bayesian/               # Bayesian engine + confidence scorer
+│   │   ├── bayse/                  # Bayse Markets client + LiveStressMonitor
+│   │   ├── bias/                   # Cognitive bias detector (5 biases)
+│   │   ├── copilot/                # Gemini 1.5 Pro integration + prompts
+│   │   ├── kelly/                  # Modified Kelly with λt
+│   │   ├── nlp/                    # Sentiment scraper + RoBERTa scorer
+│   │   ├── pipeline.py             # ZeltaPipeline orchestrator
+│   │   ├── sharpe/                 # Decision quality scorer
+│   │   ├── stress/                 # Composite stress index
+│   │   └── tools/                  # check_purchase_safety, get_hustle_templates
 │   ├── config/settings.py
-│   ├── requirements.txt
+│   ├── requirements.txt            # langgraph>=0.2.0,<1.0.0
 │   └── Dockerfile
 │
-├── zelta_backend/              # Data + auth service (deploy separately)
-│   ├── main.py                 # FastAPI entry point, Firebase init
-│   ├── config/settings.py      # Pydantic settings (all env vars)
+├── zelta_backend/                  # Data + auth service — deploy separately
+│   ├── main.py                     # FastAPI app + Firebase init
+│   ├── config/settings.py          # Pydantic settings
 │   ├── core/
-│   │   ├── auth.py             # Firebase token verification
-│   │   ├── firebase.py         # Firestore client init
+│   │   ├── auth.py                 # Firebase ID token verification
+│   │   ├── firebase.py             # Firestore client
 │   │   └── dependencies.py
 │   ├── middleware/cors.py
-│   ├── routes/                 # intelligence, wallet, simulation,
-│   │   │                       # copilot, portfolio, profile, behavioral
-│   ├── schemas/                # Pydantic request/response models
-│   ├── services/               # Business logic layer
+│   ├── optimizer.py                # Brain response normalizer
+│   ├── routes/                     # All API routes
+│   │   ├── intelligence.py
+│   │   ├── wallet.py
+│   │   ├── simulation.py
+│   │   ├── copilot.py
+│   │   ├── portfolio.py
+│   │   ├── profile.py
+│   │   └── behavioral.py
+│   ├── schemas/                    # Pydantic request/response models
+│   ├── services/                   # Business logic
+│   │   ├── intelligence_service.py # Enriches wallet_data with survival signals
 │   │   ├── behavioral_service.py
 │   │   ├── copilot_service.py
-│   │   ├── intelligence_service.py
 │   │   ├── portfolio_service.py
 │   │   ├── simulation_service.py
 │   │   ├── wallet_service.py
 │   │   └── profile_service.py
-│   ├── optimizer.py            # Portfolio optimization
 │   ├── requirements.txt
 │   └── Dockerfile
 │
-├── package.json                # Next.js 16, React 19, Tailwind 4
-├── pnpm-workspace.yaml
+├── package.json                    # Next.js 15, React, Tailwind CSS 4
+├── middleware.ts                   # Route protection (session cookie)
+├── .env.example                    # All required env vars documented
 └── tsconfig.json
 ```
 
@@ -191,11 +317,11 @@ ZELTA/
 ### Prerequisites
 
 - Python 3.11+
-- Node.js 20+ with pnpm
-- Firebase project with Firestore enabled
-- Google Cloud project with Vertex AI enabled
-- Bayse Markets account (API keys)
-- NewsAPI key (optional, for NLP layer)
+- Node.js 20+ with `pnpm`
+- Firebase project (Firestore + Auth enabled)
+- Google Cloud project (Vertex AI enabled)
+- Bayse Markets account ([bayse.io](https://bayse.io))
+- NewsAPI key (optional — for NLP fallback)
 
 ### 1. Clone
 
@@ -211,27 +337,35 @@ cd ZELTA
 BAYSE_PUBLIC_KEY=your_bayse_public_key
 BAYSE_PRIVATE_KEY=your_bayse_private_key
 GEMINI_API_KEY=your_gemini_api_key
+GOOGLE_CLOUD_PROJECT=your_gcp_project_id
+GOOGLE_CLOUD_LOCATION=us-central1
+VERTEX_GEMINI_MODEL=gemini-1.5-flash
 NEWS_API_KEY=your_newsapi_key
 INTERNAL_API_KEY=a_shared_secret_between_services
 DEBUG=true
-PORT=8080
+PORT=8081
 ```
 
 **`zelta_backend/.env`**
 ```env
 GEMINI_API_KEY=your_gemini_api_key
-FIREBASE_API_KEY=your_firebase_api_key
 FIREBASE_SERVICE_ACCOUNT_JSON='{...your service account json...}'
+AI_BRAIN_URL=http://localhost:8081
 INTERNAL_API_KEY=same_shared_secret_as_above
 APP_ENV=development
 DEBUG=true
+PORT=8080
 ```
 
-**`.env.local`** (frontend root)
+**`.env.local` (frontend root)**
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:8080
-NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+NEXT_PUBLIC_FIREBASE_APIKEY=your_firebase_api_key
+NEXT_PUBLIC_FIREBASE_AUTHDOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECTID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
 ### 3. Run the AI Brain
@@ -240,9 +374,8 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 cd zelta_ai
 pip install -r requirements.txt
 uvicorn main:app --host 0.0.0.0 --port 8081 --reload
+# Swagger: http://localhost:8081/docs
 ```
-
-Docs available at `http://localhost:8081/docs`
 
 ### 4. Run the Backend
 
@@ -250,9 +383,8 @@ Docs available at `http://localhost:8081/docs`
 cd zelta_backend
 pip install -r requirements.txt
 uvicorn main:app --host 0.0.0.0 --port 8080 --reload
+# Swagger: http://localhost:8080/docs
 ```
-
-Docs available at `http://localhost:8080/docs`
 
 ### 5. Run the Frontend
 
@@ -260,22 +392,25 @@ Docs available at `http://localhost:8080/docs`
 # from repo root
 pnpm install
 pnpm dev
+# App: http://localhost:3000
 ```
-
-App available at `http://localhost:3000`
 
 ---
 
 ## API Reference
 
-### AI Brain (`zelta_ai`) — port 8081
+### AI Brain — port 8081
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/` | Health check + live stress score |
-| `GET` | `/api/stress` | Current Bayse Markets stress signal |
-| `POST` | `/brain/v1/analyze` | Full BQ analysis (wallet + transactions) |
-| `POST` | `/brain/v1/copilot/ask` | Ask the Gemini copilot a question |
+| `GET` | `/` | Health check + live Bayse stress score |
+| `GET` | `/api/stress` | Current composite stress index (0–100) |
+| `GET` | `/api/bayse/stress` | Raw Bayse crowd fear score |
+| `GET` | `/api/bayse/sentiment` | Market sentiment direction |
+| `GET` | `/api/bayse/markets` | Live Bayse market data |
+| `POST` | `/brain/v1/analyze` | Full BQ analysis — student model + allocation |
+| `POST` | `/brain/v1/copilot/ask` | Ask Zé a question with full context |
+| `GET` | `/brain/v1/hustle-templates` | Campus hustle ideas by agent mode |
 
 **Sample `/brain/v1/analyze` request:**
 ```json
@@ -283,30 +418,44 @@ App available at `http://localhost:3000`
   "wallet_data": {
     "free_cash": 26500,
     "locked_total": 18500,
-    "total_balance": 45000
+    "total_balance": 45000,
+    "weekly_burn_rate": 8500,
+    "upcoming_obligations": 58000
   },
   "transactions": [
-    { "amount": 5000, "category": "food", "type": "debit", "description": "Bukka" }
+    { "amount": 5000, "category": "food", "type": "expense", "date": "2026-05-28" }
   ],
   "user_context": {
     "days_to_exam": 14,
-    "semester_length": 120
+    "semester_length": 120,
+    "risk_tolerance": "conservative"
   }
 }
 ```
 
-### Backend (`zelta_backend`) — port 8080
+### Backend — port 8080
 
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/health` | Health check |
-| `GET` | `/api/intelligence` | BQ score + stress summary |
-| `GET` | `/api/wallet` | Wallet balance + transactions |
-| `POST` | `/api/simulation` | Run a what-if financial scenario |
-| `POST` | `/api/copilot` | Gemini financial copilot |
-| `GET` | `/api/behavioral` | Bias detection report |
-| `GET` | `/api/portfolio` | Portfolio optimization |
+| `GET` | `/api/intelligence` | Weekly verdict + full BQ score |
+| `GET` | `/api/wallet` | Balance, transactions, spending heat, goals |
+| `POST` | `/api/wallet/income` | Log income (source + amount) |
+| `POST` | `/api/wallet/expense` | Log expense (category + amount) |
+| `POST` | `/api/wallet/lock` | Lock a savings goal |
+| `POST` | `/api/simulation/side-hustle` | Run Monte Carlo side hustle projection |
+| `POST` | `/api/simulation/savings` | Run savings trajectory simulation |
+| `POST` | `/api/copilot` | Gemini co-pilot with full student context |
+| `GET` | `/api/behavioral/snapshot` | Bias snapshot + evidence |
+| `GET` | `/api/behavioral/pattern` | 8-week behavioral pattern |
+| `GET` | `/api/portfolio` | Decision history + accuracy + P&L |
 | `GET` | `/api/profile` | Student profile |
+| `PATCH` | `/api/profile` | Update profile |
+| `GET` | `/api/bayse/stress` | Bayse crowd fear (proxied) |
+| `GET` | `/api/bayse/sentiment` | Bayse sentiment (proxied) |
+| `GET` | `/api/bayse/markets` | Bayse market list (proxied) |
+
+All backend routes require `Authorization: Bearer <firebase_id_token>`.
 
 ---
 
@@ -326,13 +475,11 @@ docker build -t zelta-backend .
 docker run -p 8080:8080 --env-file .env zelta-backend
 ```
 
-> The AI Brain image pre-downloads the `cardiffnlp/twitter-roberta-base-sentiment-latest` transformer model at build time to avoid cold-start delays on Cloud Run.
+> The AI Brain Dockerfile pre-downloads `cardiffnlp/twitter-roberta-base-sentiment-latest` at build time to eliminate cold-start delays on Cloud Run.
 
 ---
 
 ## Deployment (Google Cloud Run)
-
-Both Python services are designed for Cloud Run. The `PORT` env var is respected dynamically.
 
 ```bash
 # AI Brain
@@ -340,32 +487,30 @@ gcloud run deploy zelta-ai \
   --source zelta_ai/ \
   --region us-central1 \
   --allow-unauthenticated \
-  --set-env-vars BAYSE_PUBLIC_KEY=...,GEMINI_API_KEY=...
+  --set-env-vars BAYSE_PUBLIC_KEY=...,GEMINI_API_KEY=...,INTERNAL_API_KEY=...
 
 # Backend
 gcloud run deploy zelta-backend \
   --source zelta_backend/ \
   --region us-central1 \
   --allow-unauthenticated \
-  --set-env-vars GEMINI_API_KEY=...,FIREBASE_SERVICE_ACCOUNT_JSON=...
+  --set-env-vars FIREBASE_SERVICE_ACCOUNT_JSON=...,INTERNAL_API_KEY=...,AI_BRAIN_URL=https://zelta-ai-...run.app
 ```
 
-The backend is configured to talk to the AI Brain at:
-```
-https://zelta-ai-990094999937.us-central1.run.app
-```
-Override via the `AI_BRAIN_URL` env var if you redeploy the brain.
+Override the AI Brain URL on the backend via `AI_BRAIN_URL` env var.
 
 ---
 
-## Financial Constants (configurable via env)
+## Financial Constants
+
+Configurable via environment variables:
 
 | Constant | Default | Meaning |
 |---|---|---|
 | `KELLY_FRACTION` | `0.5` | Half-Kelly conservative sizing |
-| `MAX_INVEST_RATIO` | `0.25` | Max 25% of balance in any allocation |
-| `SAVINGS_FLOOR_RATIO` | `0.60` | Warn if free cash drops below 60% |
-| `BUFFER_RESERVE_NGN` | `5000` | Always keep ₦5,000 untouched |
+| `MAX_INVEST_RATIO` | `0.25` | Max 25% of balance per allocation |
+| `SAVINGS_FLOOR_RATIO` | `0.60` | Warn when free cash drops below 60% |
+| `BUFFER_RESERVE_NGN` | `5000` | Always protect ₦5,000 minimum |
 | `STRESS_HIGH_THRESHOLD` | `60` | Trigger HIGH STRESS mode |
 | `STRESS_CRISIS_THRESHOLD` | `80` | Trigger EXTREME PANIC mode |
 
@@ -375,17 +520,39 @@ Override via the `AI_BRAIN_URL` env var if you redeploy the brain.
 
 | Layer | Technology |
 |---|---|
-| Frontend | Next.js 16, React 19, Tailwind CSS 4, TypeScript |
-| Backend API | FastAPI 0.111, Python 3.11, Pydantic v2 |
-| AI Orchestration | LangGraph, LangChain Core, Gemini 1.5 Pro |
-| NLP | `cardiffnlp/twitter-roberta-base-sentiment-latest` (Transformers) |
-| Market Data | Bayse Markets REST + WebSocket API |
-| Database + Auth | Firebase Auth, Cloud Firestore |
-| Cloud | Google Cloud Run, Vertex AI, Cloud Build |
-| Containerization | Docker (multi-stage, Python 3.11-slim) |
+| Frontend | Next.js 15 · React 19 · Tailwind CSS 4 · TypeScript |
+| Backend API | FastAPI 0.111 · Python 3.11 · Pydantic v2 |
+| AI Orchestration | LangGraph · LangChain Core · Gemini 1.5 Pro + Flash |
+| NLP | cardiffnlp/twitter-roberta-base-sentiment-latest |
+| Market Data | Bayse Markets REST + WebSocket |
+| Auth + Database | Firebase Auth · Cloud Firestore |
+| Cloud | Google Cloud Run · Vertex AI · Cloud Build |
+| Containerization | Docker (multi-stage · Python 3.11-slim) |
+
+---
+
+## Roadmap
+
+- [ ] **Mono Connect** — automatic bank transaction import (read-only)
+- [ ] **Squad Wallet** — virtual account per student, real locked vaults
+- [ ] **Intercept Screen** — blocks dangerous spending before it happens
+- [ ] **Sapa Health Bar** — visual survival score on dashboard
+- [ ] **Gig Marketplace** — campus micro-gigs posted via WhatsApp, accepted in-app
+- [ ] **Zé Agent Cards** — proactive autonomous alerts on every dashboard load
+- [ ] **Firebase Cloud Messaging** — push notifications when stress spikes
+- [ ] **Academic Calendar** — semester dates fed to λt automatically
+- [ ] **Peer Spending Aggregates** — anonymised campus spending comparison
 
 ---
 
 ## Team
 
-Built for the 2025 Hackathon by the ZELTA team at OAU.
+Built for the **OPay Innovation Challenge 2026** by the ZELTA team at Obafemi Awolowo University, Ile-Ife.
+
+---
+
+<div align="center">
+
+**ZELTA — Know your money. Before it's gone.**
+
+</div>
