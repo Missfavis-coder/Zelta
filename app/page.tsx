@@ -1,4 +1,4 @@
-import IntroTab from "@/components/IntroTab";
+import IntroTab from "@/components /IntroTab";
 
 export default function Home() {
   return (

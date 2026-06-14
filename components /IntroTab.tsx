@@ -11,34 +11,34 @@ interface Intro {
   details: string;
   buttonText: string;
 }
-
 const intro: Intro[] = [
   {
     id: "1",
     icon: Brain,
-    heading: "Intelligence from Bayse Markets",
+    heading: "Think Before You Spend",
     details:
-      " We analyze crowd behavior and market signals to give you real-time financial intelligence—no guessing, just data..",
+      "Zelta analyzes your spending decisions before they happen and warns you when a purchase could hurt your financial runway.",
     buttonText: "Next",
   },
+
   {
     id: "2",
-    icon: ArrowBigUp,
-    heading: "Stress Index & Bayesian Reasoning",
+    icon: Target,
+    heading: "Protect Your Financial Runway",
     details:
-      " Know when you're making emotional decisions. Our Stress Index tracks your behavior and corrects it with probabilistic reasoning.",
+      "See how today's spending affects tomorrow. Run 'What If' simulations and understand the real impact of every money decision.",
     buttonText: "Next",
   },
+
   {
     id: "3",
-    icon: Target,
-    heading: "Kelly-Style Decisions ",
+    icon: ArrowBigUp,
+    heading: "Earn, Save & Stay Ahead",
     details:
-      " Get plain-English verdicts on how much to allocate, when to act, and why—tailored to your goals and risk tolerance..",
+      "Discover campus gigs, build savings habits, and get personalized insights that help you survive and thrive financially as a student.",
     buttonText: "Get Started",
   },
 ];
-
 export default function Home() {
   const navigate = useRouter();
   const [activeTab, setActiveTab] = useState(intro[0].id);
@@ -60,27 +60,27 @@ export default function Home() {
   };
 
   return (
-    <div className="space-y-6 h-screen flex items-center justify-center">
+    <div className="space-y-6 h-screen flex items-center justify-center bg-black text-white">
       <div className="rounded-xl max-w-180 p-6 text-center flex flex-col justify-center items-center ">
         {current && (
           <>
-            <current.icon className="h-10 w-10 stroke-1 text-green-600" />
-            <h2 className="mt-4 text-[18px] lg:text-[22px] max-w-80 font-bold">
+            <current.icon className="h-10 w-10 stroke-1 text-purple-600" />
+            <h2 className="mt-4 text-[20px] lg:text-[24px] max-w-80 font-bold">
               {current.heading}
             </h2>
-            <p className="mt-2 text-zinc-600 text-[12px] max-w-90">
+            <p className="mt-2 text-neutral-300 text-[14px] max-w-90">
               {current.details}
             </p>
 
             <Button
               onClick={handleButtonClick}
-              className="mt-6 rounded-xl w-[80%] bg-green-800 text-white px-8 py-2 hover:bg-green-900 text-[14px]"
+              className="mt-6 rounded-xl w-[80%] bg-purple-500 text-white px-8 py-2 font-bold text-[14px]"
             >
               {current.buttonText}
             </Button>
 
             <Button
-              className="mt-2 rounded-xl w-[80%]  hover:bg-orange-400 px-8 py-2 cursor-pointer text-[14px]"
+              className="mt-4 rounded-xl w-[80%]  bg-neutral-800/30   px-8 py-2 cursor-pointer text-[14px] font-bold"
               onClick={() => {
                 navigate.push("/auth");
               }}
