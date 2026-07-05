@@ -14,11 +14,11 @@ export function DashboardHero({
             <div className="flex flex-wrap items-center gap-3">
   
               <div className="flex items-center gap-2 text-xs">
-                <span className="text-neutral-200">
+                <span className="text-neutral-200 dark:text-foreground/80">
                   Allowance:
                 </span>
   
-                <span className="font-semibold text-white">
+                <span className="font-semibold text-white dark:text-foreground/80">
                   Monthly
                 </span>
               </div>
@@ -26,7 +26,7 @@ export function DashboardHero({
               <div className="w-1 h-1 rounded-full bg-neutral-700" />
   
               <div className="flex items-center gap-2 text-xs">
-                <span className="text-neutral-200">
+                <span className="text-neutral-200 dark:text-foreground/80">
                   Average:
                 </span>
   
@@ -38,11 +38,11 @@ export function DashboardHero({
               <div className="w-1 h-1 rounded-full bg-neutral-700" />
   
               <div className="flex items-center gap-2 text-xs">
-                <span className="text-neutral-200">
+                <span className="text-neutral-200 dark:text-foreground/80">
                   Next payment:
                 </span>
   
-                <span className="font-semibold text-white">
+                <span className="font-semibold text-white dark:text-foreground/80">
                   12 days
                 </span>
               </div>
@@ -51,17 +51,17 @@ export function DashboardHero({
   
           </div>
   
-          <div className="flex items-center gap-3 bg-[#8c52f1]/10  px-4 py-3 rounded-full">
+          <div className=" ">
+          <div className="bg-[#8c52f1]/10 inline-flex items-center gap-3 px-4 py-3 rounded-full">
             <div className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8c52f1] opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[#8c52f1]" />
             </div>
-  
-            <div>
-              <p className="text-xs font-semibold">
+
+              <p className="text-xs font-semibold dark:text-foreground">
                 AI Active
               </p>
-            </div>
+              </div>
           </div>
   
         </div>

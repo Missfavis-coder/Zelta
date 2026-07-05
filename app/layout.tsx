@@ -1,12 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Sans } from "next/font/google";
+import { Instrument_Sans, Instrument_Serif } from "next/font/google"; 
 import "./globals.css";
-import { cn } from "@/lib/utils";
+import { ThemeProvider } from "@/components /providers/theme-provider";
+
+
 
 const instrumentSans = Instrument_Sans({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-instrument-sans",
+});
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+display: "swap",
+  weight: "400",
+  style: ["normal", "italic"],
+ variable: "--font-instrument-serif",
 });
 
 export const viewport: Viewport = {
@@ -16,8 +26,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Liftoff | Find incredible people, through people you trust",
-  description: "Find incredible people, though people you trust. A hiring and networking platform where incredible people connect - and start working together.",
+  title: "ZELTA AI",
+  description: "",
 };
 
 export default function RootLayout({
@@ -28,9 +38,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${instrumentSans.variable} `} suppressHydrationWarning
+      className={`${instrumentSans.variable} ${instrumentSerif.variable}`} 
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col ">{children}</body>
+      <body className="min-h-full flex flex-col font-sans bg-background  text-white antialiased">
+        <ThemeProvider>
+        {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

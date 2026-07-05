@@ -9,7 +9,7 @@ import Link from "next/link";
 
 type InputChangeEvent = React.ChangeEvent<HTMLInputElement>;
 export const dynamic = "force-dynamic";
-export default function SigninPage() {
+export default function ForgotPasswordPage() {
   const router = useRouter();
   const [payload, setPayload] = useState({
     email: "",
@@ -38,8 +38,8 @@ export default function SigninPage() {
           
           {/* Header */}
           <div className="mb-6 relative">
-            <h1 className=" text-2xl font-bold  tracking-wider dark:text-[#160a2a]/90 text-white  mb-3 ">Welcome Back</h1>
-            <p className="text-neutral-400 dark:text-foreground/70 text-sm">Sign in to access your account.</p>
+            <h1 className=" text-2xl font-bold  tracking-wider dark:text-[#160a2a]/90 text-white  mb-3 ">Forgot Password</h1>
+            <p className="text-neutral-400 dark:text-foreground/70 text-sm">Enter your email address to retrieve your account.</p>
           </div>
 
         {/* Error Message */}
@@ -67,38 +67,9 @@ export default function SigninPage() {
                {/** {errors.email && (<p className="text-red-500 text sm mt-1">{errors.email.message}</p>)} */}
               </div>
 
-              <div>
-                 <div className="relative group">
-                    <Lock className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-[#8c52f1] transition-colors" />
-                    <input
-                     type={showPassword ? "text" : "password"}
-                     placeholder="Enter your password"
-                     className="h-12 pl-12 pr-4 w-full rounded-xl border border-neutral-900 text-white text-sm dark:border-neutral-300 dark:bg-transparent dark:focus:ring-neutral-200 dark:text-foreground outline-none focus:ring-1 focus:border-none focus:ring-[#8c52f1] transition-all duration-200 bg-neutral-800/40 "
-                     autoComplete="off"
-                     required
-                     />
-                    <button
-                       type="button"
-                       onClick={() => setShowPassword(!showPassword)}
-                       className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-                </div>
-                 {/* {errors.password && (<p className="text-red-500 text sm mt-1">{errors.password.message}</p>)} */}
-              </div>
-
             </div>
 
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 accent-foreground bg-white " autoComplete="off" />
-                <span className="text-gray-300 dark:text-foreground">Remember me</span>
-              </label>
-              <Link href="/auth/forgot-pw" className="text-primary-500 dark:text-foreground/70 hover:text-[#8c52f1] dark:hover:text-[#8c52f1] font-medium">
-                Forgot password?
-              </Link>
-            </div>
+
 
             <button
               type="submit"
@@ -109,10 +80,10 @@ export default function SigninPage() {
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Signing in...
+                  Retrieving...
                 </div>
               ) : (
-                "Sign in"
+                "Send Email"
               )}
             </button>
           </form>
@@ -121,12 +92,12 @@ export default function SigninPage() {
 
           <div className="mt-4 text-center text-sm flex items-center justify-center gap-1">
             <p className="text-neutral-400  dark:text-foreground/90">
-              Don't have an account?{" "}
+              Remember Password?{" "}
               </p>
               <div 
               onClick={()=>{router.push("/auth/signup")}}
               className="text-neutral-300 dark:text-foreground/80 hover:text-[#8c52f1] font-semibold transition-colors cursor-pointer">
-                Create account
+                Login
               </div>
 
           </div>

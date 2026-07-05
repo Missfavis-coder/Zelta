@@ -35,8 +35,8 @@ export default function SignupPage() {
           
           {/* Header */}
           <div className="mb-10 relative">
-            <h1 className=" text-2xl font-bold tracking-widest text-neutral-900 dark:text-white mb-2">Signup.</h1>
-            <p className="text-neutral-600 dark:text-neutral-400 text-sm">Create your account to access our seamless services.</p>
+            <h1 className=" text-2xl font-bold dark:text-[#160a2a]/90 text-white mb-2">Signup.</h1>
+            <p className="text-neutral-400 dark:text-foreground/70 text-sm">Create your account to access our seamless services.</p>
 
           </div>
 
@@ -58,33 +58,28 @@ export default function SignupPage() {
                     type="text"
 
                     placeholder="First name"
-                    className="h-12 pl-12 pr-4 w-full rounded-xl border border-gray-300 dark:border-neutral-700 text-neutral-500 dark:text-white text-sm outline-none focus:ring-1 focus:border-none focus:ring-cyan-500 transition-all duration-200 bg-white/10 "
+                    className="h-12 pl-12 pr-4 w-full rounded-xl border border-neutral-900 text-white text-sm outline-none focus:ring-1 focus:border-none focus:ring-[#8c52f1] transition-all duration-200 bg-neutral-800/40 dark:border-neutral-200 dark:bg-transparent dark:focus:ring-neutral-200 dark:text-foreground "
                     maxLength={30}
                     autoComplete="off"
                     required
                   />
-                  <User className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-cyan-500 transition-colors" />
+                  <User className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-300 dark:group-focus-within:text-[#8c52f1] group-focus-within:text-[#8c52f1] transition-colors" />
                 </div>
-                {/**{errors.first_name && (
-                   <p className="text-red-500 text-sm">{errors.first_name.message}</p>
-                )}*/}
              </div>
              {/**Last name */}
              <div> 
                 <div className="relative group">
                   <input
                     placeholder="Last name"
-                    className="h-12 pl-12 pr-4 w-full rounded-xl border border-gray-300 dark:border-neutral-700 text-neutral-500 dark:text-white text-sm outline-none focus:ring-1 focus:border-none focus:ring-cyan-500 transition-all duration-200 bg-white/10"
+                    className="h-12 pl-12 pr-4 w-full rounded-xl border border-neutral-900 text-white text-sm outline-none focus:ring-1 focus:border-none focus:ring-[#8c52f1] transition-all duration-200 bg-neutral-800/40 dark:border-neutral-200 dark:bg-transparent dark:focus:ring-neutral-200 dark:text-foreground "
                     maxLength={30}
                     autoComplete="off"
                     required
                     
                   />
-                  <User className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-cyan-500 transition-colors" />
+                  <User className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-300 dark:group-focus-within:text-[#8c52f1] group-focus-within:text-[#8c52f1] transition-colors" />
                 </div>
-                {/**{errors.last_name && (
-                   <p className="text-red-500 text-sm">{errors.last_name.message}</p>
-                )}*/}
+
               </div>
               {/**Email */}
               <div> 
@@ -92,16 +87,14 @@ export default function SignupPage() {
                 <input
                   type="email"
                   placeholder="Enter your email"
-                  className="h-12 pl-12 pr-4 w-full rounded-xl border border-gray-300 text-neutral-500 dark:border-neutral-700 dark:text-white text-sm outline-none focus:ring-1 focus:border-none focus:ring-cyan-500 transition-all duration-200 bg-white/10"
+                  className="h-12 pl-12 pr-4 w-full rounded-xl border border-neutral-900 text-white text-sm outline-none focus:ring-1 focus:border-none focus:ring-[#8c52f1] transition-all duration-200 bg-neutral-800/40 dark:border-neutral-200 dark:bg-transparent dark:focus:ring-neutral-200 dark:text-foreground "
                   autoComplete="off"
                   required
                   
                 />
-                <Mail className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-cyan-500 transition-colors" />
+                <Mail className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-300 dark:group-focus-within:text-[#8c52f1] group-focus-within:text-[#8c52f1] transition-colors" />
               </div>
-              {/**{errors.email && (
-                <p className="text-red-500 text-sm">{errors.email.message}</p>
-                )}*/}
+
               </div>
 
               {/**password */}
@@ -110,12 +103,12 @@ export default function SignupPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="Create a password"
-                  className="h-12 pl-12 pr-4 w-full rounded-xl border border-gray-300 dark:border-neutral-700 text-neutral-500 dark:text-white text-sm outline-none focus:ring-1 focus:border-none focus:ring-cyan-500 transition-all duration-200 bg-white/10"
+                  className="h-12 pl-12 pr-4 w-full rounded-xl border border-neutral-900 text-white text-sm outline-none focus:ring-1 focus:border-none focus:ring-[#8c52f1] transition-all duration-200 bg-neutral-800/40 dark:border-neutral-200 dark:bg-transparent dark:focus:ring-neutral-200 dark:text-foreground "
                   autoComplete="new-password"
                   required
                   
                 />
-                <Lock className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-cyan-500 transition-colors" />
+                <Lock className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-300 dark:group-focus-within:text-[#8c52f1] group-focus-within:text-[#8c52f1] transition-colors" />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -124,21 +117,19 @@ export default function SignupPage() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              {/**{errors.password && (
-                <p className="text-red-500 text-sm">{errors.password.message}</p>
-                )}**/}
+
               </div>
 
              
             <div className="flex items-start space-x-2 text-sm">
-              <input type="checkbox" className="w-4 h-4 mt-0.5"  />
-              <span className="text-gray-600 dark:text-neutral-400">
+              <input type="checkbox" className="w-4 h-4 mt-0.5 accent-foreground"  />
+              <span className="text-neutral-300 dark:text-foreground ">
                 I agree to the{" "}
-                <span className="text-neutral-900 dark:text-white hover:text-yellow-700 font-medium">
+                <span className="text-neutral-500 dark:text-foreground/70 hover:text-[#8c52f1]/30 font-medium cursor-pointer">
                   Terms of Service
                 </span>
                 {" "}and{" "}
-                <Link href="/privacy" className="text-neutral-900 dark:text-white hover:text-yellow-700 font-medium">
+                <Link href="/privacy" className="text-neutral-500 dark:text-foreground/70 hover:text-[#8c52f1] font-medium">
                   Privacy Policy
                 </Link>
               </span>
@@ -146,7 +137,7 @@ export default function SignupPage() {
 
             <button
               type="submit"
-              className="w-full h-12 flex items-center justify-center bg-gradient-to-r from-cyan-500 to-slate-800 hover:opacity-90 text-white font-semibold rounded-full transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className="w-full h-12 flex items-center justify-center bg-[#8c52f1]  hover:opacity-90 text-white font-semibold rounded-full transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
               disabled={isLoading}
               onClick={()=>{router.push("about-you")}}
             >
@@ -163,13 +154,14 @@ export default function SignupPage() {
           </div>
           </form>
 
-          <div className="mt-4 text-sm text-center">
-            <p className="text-gray-600 dark:text-neutral-400">
+          <div className="mt-4 text-sm text-center flex items-center justify-center gap-1">
+            <p className="text-neutral-400 dark:text-foreground/70">
               Already have an account?{" "}
-              <Link href="/login" className="text-neutral-800 hover:text-neutral-600/90 dark:text-white font-semibold transition-colors">
-                Login
-              </Link>
             </p>
+              <div onClick={()=>{router.push("login")}} className="text-neutral-500 dark:text-foreground hover:text-[#8c52f1] font-semibold transition-colors cursor-pointer">
+                Login
+              </div>
+           
           </div>
         </div>
       </div>

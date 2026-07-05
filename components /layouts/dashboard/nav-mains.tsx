@@ -40,10 +40,10 @@ export function NavMain({
                     <SidebarMenuButton
                       isActive={isActive}
                       className={clsx(
-                        "py-5 transition-all duration-200 flex items-center gap-3  rounded-lg mb-2 cursor-pointer !font-bold",
+                        "py-5 transition-all duration-200 flex items-center gap-3  rounded-lg mb-2 cursor-pointer ",
                         isActive
-                          ? " !text-white !bg-[#8c52f1]/10 "
-                          : "!text-white",
+                          ? " !text-white dark:!text-foreground dark:!bg-[#8c52f1]/20   !bg-neutral-800/60  "
+                          : "!text-neutral-400 dark:!text-foreground/80",
                       )}
                     >
                       {item.icon && (

@@ -140,12 +140,12 @@ export default function ZeltaCopilotChat() {
   };
 
   return (
-    <div className="max-h-[200px] text-white  relative p-4 md:p-8 w-full">
+    <div className="max-h-[200px] text-white  relative p-2 md:p-6 w-full">
 
       <div className=" h-[80vh] shadow-black/40 overflow-hidden flex flex-col">
 
         {/* Messages */}
-        <div className="flex-1 md:px-6 px-2 py-6 space-y-6 pb-40 overflow-y-auto scrollbar-none">
+        <div className="flex-1 md:px-6 px-2 py-6 space-y-4 pb-40 overflow-y-auto scrollbar-none">
           {messages.map((msg) => (
             <div
               key={msg.id}
@@ -156,17 +156,17 @@ export default function ZeltaCopilotChat() {
               }`}
             >
               {msg.sender === "assistant" && (
-                <div className="h-9 w-9 rounded-xl bg-[#8c52f1]/10 border border-[#8c52f1]/20 flex items-center justify-center shrink-0">
+                <div className="h-9 w-9 rounded-xl bg-[#8c52f1]/10 border border-[#8c52f1]/20  items-center justify-center shrink-0 md:flex hidden">
                   <Sparkles className="h-4 w-4 text-[#8c52f1]" />
                 </div>
               )}
 
-              <div className="max-w-[65%]">
+              <div className="md:max-w-[55%] max-w-[80%]">
                 <div
-                  className={`rounded-2xl px-4 py-4 text-sm leading-relaxed ${
+                  className={`rounded-2xl px-4 py-4 text-[13px] leading-relaxed font-extralight ${
                     msg.sender === "assistant"
-                      ? "bg-neutral-800/40  text-slate-200 rounded-tl-sm"
-                      : "bg-[#8c52f1]/10 text-white rounded-tr-sm font-medium"
+                      ? "bg-neutral-800/30 dark:bg-neutral-300/30 dark:text-foreground/90  text-neutral-200 rounded-tl-sm"
+                      : "bg-[#8c52f1]/10 dark:bg-[#8c52f1] text-neutral-200 rounded-tr-sm"
                   }`}
                 >
                   {msg.text}
@@ -174,29 +174,29 @@ export default function ZeltaCopilotChat() {
 
                 {msg.metadata &&
                   msg.sender === "assistant" && (
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      <div className="px-2 py-1 rounded-full bg-emerald-500/10 text-green-500 text-[11px]">
+                    <div className="flex flex-wrap gap-2 mt-3 md:text-sm text-xs">
+                      <div className="px-2 py-1 rounded-full bg-emerald-500/10 text-green-500 ">
                         {msg.metadata.mode}
                       </div>
 
-                      <div className="px-2 py-1 rounded-full bg-amber-500/10 text-amber-300 text-[11px]">
+                      <div className="px-2 py-1 rounded-full bg-amber-500/10 text-amber-300 dark:text-amber-500 ">
                         {msg.metadata.bias}
                       </div>
 
-                      <div className="px-2 py-1 rounded-full bg-red-500/10 text-red-400 text-[11px]">
+                      <div className="px-2 py-1 rounded-full bg-red-500/10 text-red-400 dark:text-red-500 ">
                         {msg.metadata.impact}
                       </div>
                     </div>
                   )}
 
-                <span className="text-[10px] text-neutral-300 mt-2 block">
+                <span className="text-[10px] text-neutral-300 dark:text-black mt-2 block">
                   {msg.timestamp}
                 </span>
               </div>
 
               {msg.sender === "user" && (
-                <div className="h-9 w-9 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center shrink-0">
-                  <User className="h-4 w-4 text-slate-300" />
+                <div className="h-9 w-9 rounded-xl bg-white/5 dark:bg-[#8c52f1]/10 border border-white/5 md:flex hidden items-center justify-center shrink-0">
+                  <User className="h-4 w-4 text-neutral-300 dark:text-foreground/80" />
                 </div>
               )}
             </div>
@@ -205,15 +205,15 @@ export default function ZeltaCopilotChat() {
           {/* Thinking State */}
           {isThinking && (
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-emerald-400 animate-pulse" />
+              <div className="h-9 w-9 rounded-xl bg-[#8c52f1]/10 border border-[#8c52f1]/20 flex items-center justify-center">
+                <Sparkles className="h-4 w-4 text-[#8c52f1] animate-pulse" />
               </div>
 
-              <div className="bg-[#111827] border border-white/5 rounded-2xl px-4 py-4">
+              <div className=" px-4 py-4">
                 <div className="flex gap-1">
-                  <span className="h-2 w-2 rounded-full bg-slate-500 animate-bounce" />
-                  <span className="h-2 w-2 rounded-full bg-slate-500 animate-bounce delay-100" />
-                  <span className="h-2 w-2 rounded-full bg-slate-500 animate-bounce delay-200" />
+                  <span className="h-2 w-2 rounded-full bg-[#8c52f1] animate-bounce" />
+                  <span className="h-2 w-2 rounded-full bg-[#8c52f1] animate-bounce delay-100" />
+                  <span className="h-2 w-2 rounded-full bg-[#8c52f1] animate-bounce delay-200" />
                 </div>
               </div>
             </div>
@@ -222,47 +222,12 @@ export default function ZeltaCopilotChat() {
           <div ref={chatEndRef} />
         </div>
 
-        {/* Quick Prompts */}
-        <div className="px-6 fixed bottom-[14%] md:left-[450px] left-0 right-0 z-50  flex gap-2 overflow-x-auto scrollbar-none">
-          <button
-            onClick={() =>
-              setInputMessage(
-                "Can I spend ₦15,000 on sneakers today?"
-              )
-            }
-            className="px-4 py-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/[0.06]  text-xs transition-all whitespace-nowrap flex items-center"
-          >
-            👟 Sneaker Purchase
-          </button>
-
-          <button
-            onClick={() =>
-              setInputMessage(
-                "Need to buy engineering handouts for ₦3,000"
-              )
-            }
-            className="px-4 py-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/[0.06]  text-xs transition-all whitespace-nowrap"
-          >
-            📚 Engineering Handouts
-          </button>
-
-          <button
-            onClick={() =>
-              setInputMessage(
-                "What if my allowance gets delayed?"
-              )
-            }
-            className="px-4 py-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/[0.06] text-xs transition-all whitespace-nowrap"
-          >
-            ⏳ Delayed Allowance
-          </button>
-        </div>
         <form
-  onSubmit={handleSend}
-  className="fixed bottom-0 md:left-[250px] left-0 right-0 z-50 px-4 pb-4 md:px-8"
->
+       onSubmit={handleSend}
+           className="fixed bottom-5 lg:left-[250px] left-0 right-0 z-50 px-4 pb-4 md:px-8"
+   >
   <div className="max-w-4xl mx-auto">
-    <div className="flex items-center gap-3 rounded-full bg-[#8c52f1]/10 backdrop-blur-3xl px-6 py-3">
+    <div className="flex items-center gap-3 rounded-full bg-neutral-900 dark:bg-[#8c52f1]/90 backdrop-blur-lg px-6 py-3 shadow-xs">
     <div className="font-bold cursor-pointer"><Plus size={18}/></div>
       <input
         type="text"
@@ -272,7 +237,7 @@ export default function ZeltaCopilotChat() {
         }
         placeholder="Ask Zelta anything..."
         disabled={isThinking}
-        className="flex-1 bg-transparent outline-none text-sm text-white placeholder:text-white"
+        className="flex-1 bg-transparent outline-none text-sm text-white placeholder:text-white font-semi-bold"
       />
 
       <button
@@ -280,7 +245,7 @@ export default function ZeltaCopilotChat() {
         disabled={
           !inputMessage.trim() || isThinking
         }
-        className="h-10 w-10 rounded-xl bg-[#d98825]  text-white flex items-center justify-center hover:scale-105 transition-all disabled:opacity-40 cursor-pointer"
+        className="h-10 w-10 rounded-xl bg-[#d98825]  text-white flex items-center justify-center hover:scale-105 transition-all disabled:opacity-70 cursor-pointer"
       >
         <Send className="h-4 w-4" />
       </button>

@@ -36,7 +36,7 @@ ofavourmi55@gmail.com
         <Button
 
           variant="ghost"
-          className="w-full font-bold justify-start cursor-pointer gap-2 text-[#8c52f1] hover:text-purple-800 bg-white"
+          className="w-full font-bold justify-start cursor-pointer gap-2 text-[#8c52f1] hover:text-purple-800 dark:hover:bg-white bg-white"
         >
           <LogOut size={16} />
 Logout

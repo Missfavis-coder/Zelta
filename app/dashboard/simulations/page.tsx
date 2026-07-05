@@ -68,7 +68,7 @@ const [activeTab, setActiveTab] = useState<
 
   const riskColor =
     result?.riskLevel === "HIGH"
-      ? "bg-red-600"
+      ? "bg-red-500 "
       : result?.riskLevel === "MEDIUM"
       ? "bg-yellow-500"
       : "bg-green-500";
@@ -79,29 +79,17 @@ const [activeTab, setActiveTab] = useState<
 
         {/* Overview Cards */}
 
-        <div className="grid md:grid-cols-2 gap-4 mb-8">
-          <div className=" rounded-2xl p-5  bg-neutral-800/30">
+        <div className="s mb-8">
+
+          <div className="rounded-md p-5 bg-neutral-800/20 dark:bg-neutral-200/30 ">
             <div className="flex items-center gap-3">
-              <Calendar size={18} className="text-purple-500" />
-              <span className="text-neutral-500 md:text-[14px] text-sm font-semibold uppercase">
-                Current Runway
+              <Wallet size={18} className="text-foreground" />
+              <span className="text-neutral-500 dark:text-foreground/80 md:text-[14px] md:text-sm text-xs font-semibold uppercase tracking-wide">
+                 Balance
               </span>
             </div>
 
-            <h2 className="md:text-xl text-[16px] font-bold mt-3">
-              23 Days
-            </h2>
-          </div>
-
-          <div className="rounded-2xl p-5  bg-neutral-800/30">
-            <div className="flex items-center gap-3">
-              <Wallet size={18} className="text-purple-500" />
-              <span className="text-neutral-500 md:text-[14px] text-sm font-semibold uppercase">
-                Current Balance
-              </span>
-            </div>
-
-            <h2 className="md:text-xl text-[16px] font-bold mt-3">
+            <h2 className="md:text-xl text-[16px] dark:text-foreground font-bold mt-3">
               ₦85,000
             </h2>
           </div>
@@ -109,12 +97,12 @@ const [activeTab, setActiveTab] = useState<
 
         {/* Input Area */}
 
-        <div className="bg-neutral-800/30 rounded-2xl md:p-6 p-5">
-          <h3 className="text-xl font-semibold mb-3">
+        <div className="bg-neutral-800/20 dark:bg-neutral-200/30  rounded-md md:p-6 p-5">
+          <h3 className="md:text-[16px] text-sm dark:text-[#160a2a]/90 font-semibold mb-3">
             What are you thinking of doing?
           </h3>
 
-          <p className="text-neutral-300 text-sm mb-4">
+          <p className="text-neutral-300 dark:text-foreground/80 text-sm mb-4">
             Example:
             <br />
             • Buy a ₦25,000 sneaker
@@ -129,15 +117,15 @@ const [activeTab, setActiveTab] = useState<
             onChange={(e) => setQuery(e.target.value)}
             rows={4}
             placeholder="What if I buy a ₦25,000 sneaker this week?"
-            className="w-full rounded-xl border border-neutral-900 p-4 outline-none focus:border-amber-500 text-sm"
+            className="w-full rounded-xl border border-neutral-900 dark:border-foreground/20 p-4 outline-none dark:focus:border-amber-500 focus:border-amber-500 dark:text-foreground text-sm"
           />
 
-          <div className="text-sm text-amber-400/40">Ensure to enter the amount of whatever purchase you want to make</div>
+          <div className="text-sm text-amber-400/40 dark:text-amber-500">Ensure to enter the amount of whatever purchase you want to make</div>
 
           <button
             onClick={handleSimulation}
             disabled={loading}
-            className="mt-4 bg-[#8c52f1] hover:bg-purple-700 px-6 py-3 rounded-xl font-semibold transition text-sm cursor-pointer"
+            className="mt-4 bg-[#8c52f1] hover:bg-purple-600 px-6 py-3 rounded-xl font-semibold transition text-sm cursor-pointer"
           >
             {loading
               ? "Running Simulation..."
@@ -148,14 +136,14 @@ const [activeTab, setActiveTab] = useState<
 
         {/* Results */}
         {showDialog && result && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-    <div className="w-full max-w-3xl rounded-3xl bg-neutral-900  overflow-hidden">
+  <div  className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-800/20  dark:bg-neutral-300/10 backdrop-blur-sm p-4 ">
+    <div className="w-full max-w-3xl  rounded-md bg-neutral-900 dark:bg-background overflow-hidden">
 
       {/* Header */}
 
-      <div className="flex items-center justify-between p-5 ">
+      <div className="flex items-center justify-between p-4 ">
         <div>
-          <h2 className="font-bold text-[18px] uppercase ">
+          <h2 className="font-bold md:text-[18px] text-[15px] uppercase dark:text-[#160a2a]/90 ">
             Simulation Result
           </h2>
 
@@ -169,7 +157,7 @@ const [activeTab, setActiveTab] = useState<
 
         <button
           onClick={() => setShowDialog(false)}
-          className="text-neutral-400 hover:text-white text-xl cursor-pointer"
+          className="text-neutral-400 dark:text-[#160a2a]/90 hover:text-white text-xl cursor-pointer"
         >
           <X/>
         </button>
@@ -177,13 +165,13 @@ const [activeTab, setActiveTab] = useState<
 
       {/* Tabs */}
 
-      <div className="flex border-b border-neutral-800 ">
+      <div className="flex border-b border-neutral-800 dark:border-foreground/20 ">
         <button
           onClick={() => setActiveTab("overview")}
           className={`px-5 py-3 text-sm font-medium cursor-pointer ${
             activeTab === "overview"
-              ? "text-white border-b-2 border-[#8c52f1]"
-              : "text-neutral-400"
+              ? "text-white dark:text-foreground border-b-2 border-[#8c52f1]"
+              : "text-neutral-400 dark:text-foreground/70"
           }`}
         >
           Overview
@@ -193,8 +181,8 @@ const [activeTab, setActiveTab] = useState<
           onClick={() => setActiveTab("insights")}
           className={`px-5 py-3 text-sm font-medium cursor-pointer ${
             activeTab === "insights"
-              ? "text-white border-b-2 border-[#8c52f1]"
-              : "text-neutral-400"
+              ? "text-white border-b-2 dark:text-foreground border-[#8c52f1]"
+              : "text-neutral-400 dark:text-foreground/70"
           }`}
         >
           Insights
@@ -204,8 +192,8 @@ const [activeTab, setActiveTab] = useState<
           onClick={() => setActiveTab("alternatives")}
           className={`px-5 py-3 text-sm font-medium cursor-pointer ${
             activeTab === "alternatives"
-              ? "text-white border-b-2 border-[#8c52f1]"
-              : "text-neutral-400"
+              ? "text-white border-b-2 dark:text-foreground border-[#8c52f1]"
+              : "text-neutral-400 dark:text-foreground/70"
           }`}
         >
           Alternatives
@@ -221,77 +209,44 @@ const [activeTab, setActiveTab] = useState<
 
     <div className="grid md:grid-cols-2 gap-4">
 
-      <div className="bg-neutral-800/30 rounded-2xl p-5">
-        <p className="text-neutral-400 text-sm uppercase">
+      <div className="bg-neutral-800/30 dark:bg-neutral-300/20 rounded-xl p-4">
+        <p className="text-neutral-400 dark:text-foreground/80 text-xs uppercase">
           Remaining Balance
         </p>
 
-        <h3 className="text-xl font-bold mt-2">
+        <h3 className="md:text-xl text-[16px] dark:text-foreground font-bold mt-2">
           ₦{result.remainingBalance.toLocaleString()}
         </h3>
       </div>
 
-      <div className="bg-neutral-800/30 rounded-2xl p-5">
-        <p className="text-neutral-400 text-sm uppercase">
+      <div className="bg-neutral-800/30 dark:bg-neutral-300/20 rounded-xl p-4">
+        <p className="text-neutral-400 dark:text-foreground/80 uppercase text-xs ">
           Days Lost
         </p>
 
-        <h3 className="text-xl font-bold mt-2 text-red-400">
+        <h3 className="md:text-xl text-[16px] dark:text-foreground font-bold mt-2 text-white">
           {result.daysLost}
         </h3>
       </div>
 
-      <div className="bg-neutral-800/30 rounded-2xl p-5">
-        <p className="text-neutral-400 text-sm uppercase">
+      <div className="bg-neutral-800/30 dark:bg-neutral-300/20 rounded-xl p-4">
+        <p className="text-neutral-400 text-xs dark:text-foreground/80 uppercase">
           Runway Before
         </p>
 
-        <h3 className="text-xl font-bold mt-2">
+        <h3 className="md:text-xl text-[16px] dark:text-foreground font-bold mt-2">
           {result.runwayBefore} Days
         </h3>
       </div>
 
-      <div className="bg-neutral-800/30 rounded-2xl p-5">
-        <p className="text-neutral-400 text-sm uppercase">
+      <div className="bg-neutral-800/30 dark:bg-neutral-300/20 rounded-xl p-4">
+        <p className="text-neutral-400 text-xs dark:text-foreground/80 uppercase">
           Runway After
         </p>
 
-        <h3 className="text-xl font-bold mt-2">
+        <h3 className="md:text-xl text-[16px] font-bold dark:text-foreground mt-2">
           {result.runwayAfter} Days
         </h3>
-      </div>
-
-    </div>
-
-    <div className="space-y-4">
-
-      <div>
-        <p className="mb-2 text-sm text-neutral-400">
-          Before Purchase
-        </p>
-
-        <div className="w-full h-3 bg-neutral-800 rounded-full">
-          <div className="w-full h-3 bg-[#8c52f1] rounded-full"></div>
-        </div>
-      </div>
-
-      <div>
-        <p className="mb-2 text-sm text-neutral-400">
-          After Purchase
-        </p>
-
-        <div className="w-full h-3 bg-neutral-800 rounded-full">
-          <div
-            className="h-3 bg-red-600 rounded-full"
-            style={{
-              width: `${
-                (result.runwayAfter /
-                  result.runwayBefore) *
-                100
-              }%`,
-            }}
-          />
-        </div>
       </div>
 
     </div>
@@ -300,30 +255,30 @@ const [activeTab, setActiveTab] = useState<
 )}
 
 {activeTab === "insights" && (
-  <div className="bg-neutral-800/30 rounded-2xl p-5">
+  <div className="bg-neutral-800/30 dark:bg-neutral-300/20 rounded-2xl p-5">
     <div className="flex items-center gap-2 mb-4">
       <Sparkles size={18} fill="#8c52f1" className="text-[#8c52f1]" />
-      <h3 className="font-semibold">
+      <h3 className="font-semibold dark:text-foreground">
         The best decision at the moment.
       </h3>
     </div>
 
-    <p className="leading-relaxed text-sm text-neutral-300">
+    <p className="leading-relaxed text-sm text-neutral-300 dark:text-foreground/70">
       {result.recommendation}
     </p>
   </div>
 )}
 
 {activeTab === "alternatives" && (
-  <div className="bg-neutral-800/40 rounded-2xl p-5">
+  <div className="bg-neutral-800/40 dark:bg-neutral-300/20 rounded-2xl p-5">
     <div className="flex items-center gap-2 mb-4">
-      <ScanEye size={18} fill="" className=" text-[#8c52f1] " />
-      <h3 className="font-semibold">
+      <ScanEye size={18}  className=" text-[#8c52f1] " />
+      <h3 className="font-semibold  dark:text-foreground">
         Better Alternatives
       </h3>
     </div>
 
-    <ul className="space-y-4 text-neutral-300 text-sm">
+    <ul className="space-y-4 text-neutral-300 dark:text-foreground/70 text-sm">
       <li>✓ Delay purchase until next allowance</li>
       <li>✓ Save weekly towards the goal</li>
       <li>✓ Find a lower-cost alternative</li>

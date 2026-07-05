@@ -13,21 +13,21 @@ import {
       description: "Ask for financial guidance",
       href: "/dashboard/chat",
       icon: MessageSquareCode,
-      color: "text-[#8c52f1]",
+      color: "text-[#8c52f1] bg-[#8c52f1]/10",
     },
     {
       title: "Business Simulator",
       description: "Validate campus hustle ideas",
       href: "/dashboard/simulator",
       icon: Brain,
-      color: "text-blue-400",
+      color: "text-blue-400 bg-blue-400/10",
     },
     {
       title: "Opportunity Gigs",
       description: "Find quick earning opportunities",
       href: "/dashboard/gigs",
       icon: Zap,
-      color: "text-amber-400",
+      color: "text-amber-400 bg-amber-400/10",
     },
   ];
   
@@ -36,11 +36,11 @@ import {
       <div>
   
         <div className="mb-4">
-          <h2 className="text-lg font-bold">
+          <h2 className="text-lg font-bold dark:text-[#160a2a]/90">
             Quick Actions
           </h2>
   
-          <p className="text-sm text-neutral-500 mt-1">
+          <p className="text-sm text-neutral-400 dark:text-foreground/80 mt-1">
             Access Zelta intelligence tools instantly.
           </p>
         </div>
@@ -54,27 +54,27 @@ import {
               <Link
                 key={action.title}
                 href={action.href}
-                className="group rounded-3xl border border-neutral-900 bg-[#0b0b0b] p-6 hover:border-neutral-700 transition-all duration-300 hover:-translate-y-1"
+                className="group rounded-md bg-neutral-800/20 dark:bg-neutral-200/30 p-6 hover:border-neutral-700 transition-all duration-300 hover:-translate-y-1"
               >
   
-                <div className={`w-fit rounded-2xl bg-neutral-900 p-3 ${action.color}`}>
+                <div className={`w-fit rounded-2xl  p-3 ${action.color}`}>
                   <Icon size={20} />
                 </div>
   
                 <div className="mt-10 flex items-end justify-between">
                   <div>
-                    <h3 className="font-semibold">
+                    <h3 className="font-semibold dark:text-[#160a2a]/90" >
                       {action.title}
                     </h3>
   
-                    <p className="text-sm text-neutral-500 mt-1">
+                    <p className="text-sm text-neutral-500 dark:text-foreground/70 mt-1">
                       {action.description}
                     </p>
                   </div>
   
                   <ArrowUpRight
                     size={18}
-                    className="text-neutral-600 group-hover:text-white transition-colors"
+                    className="text-neutral-600 dark:text-foreground dark:group-hover:text-[#160a2a]/90 group-hover:text-white transition-colors"
                   />
                 </div>
   

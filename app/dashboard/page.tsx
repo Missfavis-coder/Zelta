@@ -50,14 +50,14 @@ export default function Page() {
   ];
 
   return (
-    <main className="min-h-screen bg-background text-white">
+    <main className="min-h-screen text-white">
       <div className=" md:px-6 px-4 py-6 space-y-6">
 
         <DashboardHero
           runwayDays={financialStatus.runwayDays}
         />
-                <DashboardMetrics  logs={recentIntercepts} financialStatus={financialStatus} />
-        <AcademicPressure alerts={alerts} />
+                <DashboardMetrics  financialStatus={financialStatus} />
+        <AcademicPressure alerts={alerts} logs={recentIntercepts}  />
           <DashboardActions />
 
 

@@ -34,7 +34,7 @@ export default function NotFound() {
             </Link>
             <button
               onClick={() => window.history.back()}
-              className="group inline-flex items-center justify-center gap-2 px-8 py-3  bg-purple-500 rounded-3xl cursor-pointer transition-all duration-200"
+              className="group inline-flex items-center justify-center gap-2 px-8 py-3  bg-[#8c52f1] rounded-3xl cursor-pointer transition-all duration-200"
             >
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
               <span className="font-semibold text-sm">Go back</span>

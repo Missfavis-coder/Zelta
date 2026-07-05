@@ -159,8 +159,8 @@ export default function AboutYou() {
         <div className="mb-6">
 
           <div className="mb-6 relative">
-            <h1 className=" text-2xl font-bold  tracking-wider  mb-3 text-[#090536]">Tell Zelta about yourself.</h1>
-            <p className="text-neutral-600 text-sm">It helps Zelta understand more about you.</p>
+            <h1 className=" text-2xl font-bold  tracking-wider  mb-3 ">Tell Zelta about yourself.</h1>
+            <p className="text-neutral-500 text-sm">It helps Zelta understand more about you.</p>
           </div>
 
           <div className="flex items-center max-w-[150px] justify-end gap-3 mb-5">
@@ -169,8 +169,8 @@ export default function AboutYou() {
                 key={step.id}
                 className={`h-1 flex-1 rounded-full transition-all duration-500 ${
                   index <= currentStep
-                    ? "bg-black"
-                    : "bg-neutral-300"
+                    ? "bg-[#8c52f1]"
+                    : "bg-neutral-800"
                 }`}
               />
             ))}
@@ -179,7 +179,7 @@ export default function AboutYou() {
           <div className="flex items-center justify-between">
 
             <div>
-              <p className="text-sm text-neutral-500 mb-2">
+              <p className="text-sm  mb-2">
                 STEP {currentStep + 1}
               </p>
             </div>
@@ -195,7 +195,7 @@ export default function AboutYou() {
             {current.questions.map((question) => (
               <div key={question.label}>
 
-                <h2 className="text-[16px] font-semibold mb-5">
+                <h2 className="text-[16px] text-neutral-400 font-semibold mb-5">
                   {question.label}
                 </h2>
 
@@ -214,12 +214,12 @@ export default function AboutYou() {
                             option
                           )
                         }
-                        className={`group px-4 py-2 rounded-md lg:rounded-xl border transition-all duration-300 text-left cursor-pointer
+                        className={`group px-4 py-2 rounded-md lg:rounded-xl  text-left cursor-pointer
                           
                           ${
                             selected
-                              ? " bg-[#090536] text-white shadow-lg scale-0.4]"
-                              : "border-neutral-200 bg-white "
+                              ? " border border-neutral-900 text-white shadow-lg scale-0.4]"
+                              : " bg-neutral-800/40 "
                           }
                         `}
                       >
@@ -234,8 +234,8 @@ export default function AboutYou() {
                               
                               ${
                                 selected
-                                  ? "border-white bg-white text-black"
-                                  : "border-neutral-300"
+                                  ? " bg-white text-[#8c52f1]"
+                                  : "border-neutral-800"
                               }
                             `}
                           >
@@ -270,7 +270,7 @@ export default function AboutYou() {
                   router.push("/dashboard")
                 }
                 disabled={!allAnswered}
-                className="bg-[#090536] text-white px-7 py-3 rounded-2xl  transition-all hover:scale-[1.03] disabled:opacity-50 disabled:hover:scale-100 text-sm font-bold cursor-pointer"
+                className="bg-[#8c52f1] text-white px-7 py-3 rounded-2xl  transition-all hover:scale-[1.03] disabled:opacity-50 disabled:hover:scale-100 text-sm font-bold cursor-pointer"
               >
                 Continue to Dashboard
               </button>
@@ -278,7 +278,7 @@ export default function AboutYou() {
               <button
                 onClick={nextStep}
                 disabled={!allAnswered}
-                className="bg-[#090536] font-bold text-white px-7 py-2 rounded-3xl text-sm flex items-center gap-2 transition-all hover:scale-[1.03] cursor-pointer "
+                className="bg-[#8c52f1] font-bold text-white px-7 py-2 rounded-3xl text-sm flex items-center gap-2 transition-all hover:scale-[1.03] cursor-pointer "
               >
                 Continue
                 <ChevronRight size={18} />

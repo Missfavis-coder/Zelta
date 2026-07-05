@@ -23,6 +23,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 import { NavMain } from "./nav-mains";
 import NavSettings from "./nav-footer";
 import { Button } from "@/components /ui/button";
+import Link from "next/link";
 
 // Plain, human-friendly names with the direct AI chat directory added
 const baseNavMain = [
@@ -34,12 +35,7 @@ const baseNavMain = [
   {
     title: "Chat with AI",
     url: "/dashboard/chat",
-    icon: MessageSquareCode,
-  },
-  {
-    title: "Safe Lock",
-    url: "/dashboard/guardrails",
-    icon: ShieldAlert,
+    icon: Sparkles,
   },
   {
     title: "What If",
@@ -70,7 +66,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar
-      className="border-r border-neutral-900 bg-card relative overflow-hidden"
+      className="border-r border-neutral-900 dark:border-neutral-200   overflow-hidden fixed  "
       collapsible="icon"
       {...props}
     >
@@ -86,7 +82,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenu className="flex-1 ">
             <SidebarMenuItem className="flex items-center py-2 justify-center">
               <SidebarMenuButton className=" " asChild>
-                <div className="flex items-center gap-1 ">
+                <div className="flex items-center gap-1 cursor-pointer">
                   {/* ICON CHANGES WHEN COLLAPSED */}
                   <div className="text-[#8c52f1] ">
                     {isCollapsed ? (
@@ -98,7 +94,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
                   {/* TEXT ONLY WHEN EXPANDED */}
                   {!isCollapsed && (
-                    <span className="text-xl font-extrabold text-[#8c52f1] ">ZELTA</span>
+                    <Link href="/" className="text-xl font-extrabold text-[#8c52f1] ">ZELTA</Link>
                   )}
                 </div>
               </SidebarMenuButton>
@@ -117,8 +113,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           )}
         </div>
       </SidebarHeader>
-      <hr />
-      <SidebarContent className="relative z-10 px-3 mt-4">
+      
+      <SidebarContent className="relative z-10 px-2 mt-4">
         <NavMain items={baseNavMain} />
       </SidebarContent>
 

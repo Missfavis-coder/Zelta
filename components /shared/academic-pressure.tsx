@@ -1,4 +1,4 @@
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, ShieldCheck, Zap } from "lucide-react";
 
 interface Alert {
   id: number;
@@ -8,93 +8,99 @@ interface Alert {
 
 export function AcademicPressure({
   alerts,
+  logs
 }: {
   alerts: Alert[];
+  logs: {
+    id: number;
+    message: string;
+    time: string;
+    saved: boolean;
+  }[];
 }) {
     return (
-      <section className="rounded-3xl bg-neutral-800/30 p-6 backdrop-blur-xl">
+      <section className="rounded-md bg-neutral-800/20 dark:bg-neutral-200/30 md:p-6 p-4 ">
         <div className="">
-  
-          <div className="space-y-3">
+           
+          <div className="space-y-3">  
 
-      <div className=" ">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
 
-          <div>
-            <p className="md:text-sm text-xs font-semibold text-neutral-500 uppercase">
-              Academic Financial Intelligence
-            </p>
+  
+  <div className=" grid md:grid-cols-2 grid-cols-1 gap-4 space-y-8">
 
-            <h2 className="lg:text-[16px] text-[14px] font-semibold text-white mt-1">
-              Help Zelta understand your semester pressure.
-            </h2>
-          </div>
+  <div className="">
 
-          <button className="inline-flex items-center gap-2 rounded-md bg-purple-500/10 px-4 py-2 text-sm text-amber-400 transition hover:bg-cyan-400/20">
-            <CalendarDays className="h-4 w-4" />
-            Set Exam Date
-          </button>
+  <div className="mb-6">
+    <span className="text-neutral-500 dark:text-foreground/80 lg:text-sm text-xs font-semibold uppercase">
+      AI Activity
+    </span>
 
-        </div>
-      </div>
-  
-  <div className=" grid md:grid-cols-2 grid-cols-1 gap-4">
-  <div className="bg-neutral-800/20 py-4 px-4 rounded-md">
-  <div>
-              <h2 className="text-[16px] font-bold text-purple-500">
-                Exams in 11 Days
-              </h2>
-  
-              <p className="mt-2 max-w-xl text-xs font-semibold leading-relaxed text-white">
-                Zelta has automatically reduced your recommended weekly
-                spending limit to protect your runway during exam season.
-              </p>
-            </div>
-              
-          <div className="w-full space-y-3 mt-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-white font-semibold">Stress Multiplier</span>
-  
-              <span className="font-medium text-purple-300">
-                Increasing
-              </span>
-            </div>
-  
-            <div className="h-2 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full w-[72%] rounded-full bg-amber-400" />
-            </div>
-  
-            <div className="flex items-center justify-between text-xs text-neutral-300">
-              <span>Low Pressure</span>
-              <span>High Pressure</span>
-            </div>
-          </div>
+    <p className="text-sm text-neutral-300 dark:text-foreground/80 mt-1">
+      Real-time financial protection and opportunities.
+    </p>
   </div>
 
-  <div className="bg-neutral-800/20 py-4 px-4 rounded-md">
-  <div className="text-purple-500 uppercase font-semibold md:text-sm text-xs mb-4">Notification to keep you on track</div>
+  <div className="divide-y divide-neutral-900 dark:divide-neutral-200">
+    {logs.map((log) => (
+      <div
+        key={log.id}
+        className="py-4 flex items-start gap-4 first:pt-0 last:pb-0"
+      >
+
+        <div
+          className={`p-2 rounded-xl ${
+            log.saved
+              ? "bg-[#8c52f1]/10 text-[#8c52f1]"
+              : "bg-amber-500/10 text-amber-400"
+          }`}
+        >
+          {log.saved ? (
+            <ShieldCheck size={16} />
+          ) : (
+            <Zap size={16} />
+          )}
+        </div>
+
+        <div className="flex-1">
+          <p className="text-sm text-neutral-400 dark:text-foreground/70">
+            {log.message}
+          </p>
+
+          <span className="text-xs text-neutral-500 dark:text-foreground mt-1 block">
+            {log.time}
+          </span>
+        </div>
+
+      </div>
+    ))}
+  </div>      
+
+  </div>
+
+  <div className="md:border-l border-neutral-800 dark:border-neutral-200 md:pl-6">
+  <div className="text-neutral-500 dark:text-foreground/80 uppercase font-semibold md:text-sm text-xs mb-4">Notification to keep you on track</div>
   {alerts.map((alert) => (
           <div
             key={alert.id}
-            className="flex items-start justify-between gap-6 "
+            className="flex items-start justify-between space-y-5 "
           >
             <div className="space-y-1">
 
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-amber-500" />
 
-                <h3 className="font-semibold md:text-sm text-[15px] text-white">
+                <h3 className="font-light text-sm dark:text-foreground/90 text-white">
                   {alert.title}
                 </h3>
               </div>
 
-              <p className="text-sm leading-relaxed text-neutral-300 pl-4">
+              <p className="md:text-sm text-xs leading-relaxed dark:text-foreground/70 text-neutral-400 pl-4">
                 {alert.description}
               </p>
 
             </div>
 
-            <span className="text-xs text-neutral-500 whitespace-nowrap">
+            <span className="text-xs text-neutral-500 dark:text-gray-800 whitespace-nowrap">
               AI Insight
             </span>
           </div>
@@ -106,7 +112,6 @@ export function AcademicPressure({
 
   
           </div>
-
 
         </div>
       </section>
