@@ -15,7 +15,7 @@ export function AcademicPressure({
     id: number;
     message: string;
     time: string;
-    saved: boolean;
+    saved?: boolean;
   }[];
 }) {
     return (
