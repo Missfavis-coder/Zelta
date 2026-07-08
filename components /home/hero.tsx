@@ -55,11 +55,11 @@ export default function HeroSection() {
               transition={{ delay: 0.5, duration: 0.6 }}
               className="flex flex-col sm:flex-row justify-center gap-4 mt-2  "
             >
-              <button className="group px-8 py-4 rounded-full bg-[#8c52f1] text-white font-semibold md:text-[16px] text-sm transition-all duration-300 shadow-lg dark:shadow-xs shadow-purple-500/25 flex items-center justify-center gap-2 ">
+              <button className="group px-8 py-4 rounded-full cursor-pointer bg-[#8c52f1] text-white font-semibold md:text-[16px] text-sm transition-all duration-300 shadow-lg dark:shadow-xs shadow-purple-500/25 flex items-center justify-center gap-2 ">
                 Get Started
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
-              <button className="px-10 py-4 rounded-full glass dark:text-[#8c52f1] text-white font-semibold md:text-[16px] text-sm shadow-2xl dark:shadow-none dark:bg-transparent dark:border dark:border-[#8c52f1]/40 bg-neutral-800/40 transition-all duration-300">
+              <button className="px-10 py-4 rounded-full cursor-pointer dark:text-[#8c52f1] text-white font-semibold md:text-[16px] text-sm shadow-2xl dark:shadow-none dark:bg-transparent dark:border dark:border-[#8c52f1]/40 bg-neutral-800/40 transition-all duration-300">
                 Watch Demo
               </button>
             </motion.div>

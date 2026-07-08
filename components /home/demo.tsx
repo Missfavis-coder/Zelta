@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from '../ui/button';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function Demo() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -47,6 +48,7 @@ export default function Demo() {
     prevSlide();
     restartTimer();
   };
+  const router = useRouter();
 
 
   return (
@@ -87,7 +89,9 @@ export default function Demo() {
             </h1>
 
             <div className="flex justify-center mt-12">
-                <Button className="bg-white text-[#8c52f1] rounded-full px-8 py-6 md:px-10 md:py-8 font-bold cursor-pointer">
+                <Button 
+                onClick={()=>(router.push("/auth/login"))}
+                className="bg-white text-[#8c52f1] rounded-full px-8 py-6 md:px-10 md:py-8 font-bold cursor-pointer">
                     Get Started
                     <ArrowRight />
                 </Button>
@@ -134,7 +138,9 @@ export default function Demo() {
             </div>
 
             <div className="flex justify-center mt-12">
-                <Button className="bg-white text-[#8c52f1] rounded-full px-8 py-6 md:px-10 md:py-8 font-bold cursor-pointer">
+                <Button 
+                onClick={()=>(router.push("auth/login"))}
+                className="bg-white text-[#8c52f1] rounded-full px-8 py-6 md:px-10 md:py-8 font-bold cursor-pointer">
                     Get Started
                     <ArrowRight />
                 </Button>
