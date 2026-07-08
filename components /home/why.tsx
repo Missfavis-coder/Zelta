@@ -8,6 +8,7 @@ import {
   HeartPlus
 } from 'lucide-react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
 const cards = [
   {
@@ -33,6 +34,7 @@ const cards = [
 ]
 
 export default function WhySection() {
+  const router = useRouter();
   return (
     <section className="relative overflow-hidden mt-6 border-t border-b border-white/10 bg-black dark:bg-[#8c52f1] ">
       {/* Grid Background */}

@@ -1,14 +1,20 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { UserPlus, MessageSquare, Sparkles } from "lucide-react";
+import { UserPlus, MessageSquare, Sparkles, CloudUpload } from "lucide-react";
 import { Button } from "../ui/button";
+import { useRouter } from "next/navigation";
 
 const steps = [
   {
     icon: UserPlus,
     title: "Create an account",
     description: "Sign up in seconds and access your dashboard.",
+  },
+  {
+    icon: CloudUpload,
+    title: "Upload CSV",
+    description: "Upload your bank transaction history in CSV format.",
   },
   {
     icon: MessageSquare,
@@ -23,6 +29,7 @@ const steps = [
 ];
 
 export default function HowItWorks() {
+  const router = useRouter();
   return (
     <section className="px-6 py-20">
       <div className="mx-auto max-w-5xl mt-8 flex flex-col justify-center items-center">
@@ -38,11 +45,11 @@ export default function HowItWorks() {
             How It Works
           </h2>
           <p className="mt-3 text-gray-300 dark:text-foreground/80 text-[14px]">
-            Three simple steps. No app download required.
+            Four simple steps. No app download required.
           </p>
         </motion.div>
 
-        <div className="mt-14 flex flex-col md:flex-row items-center justify-center">
+        <div className="mt-14 flex flex-col lg:flex-row items-center justify-center">
   {steps.map((step, index) => {
     const Icon = step.icon;
 
@@ -56,7 +63,7 @@ export default function HowItWorks() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: index * 0.15 }}
           viewport={{ once: true }}
-          className="flex flex-col items-center text-center w-60"
+          className="flex flex-col items-center text-center md:w-50 w-60"
         >
           <div className="flex h-12 w-12 items-center justify-center rounded-full border border-neutral-900 dark:border-border/10 shadow-2xl">
             <Icon className="h-5 w-5 text-[#8c52f1]" />
@@ -64,7 +71,7 @@ export default function HowItWorks() {
 
           <h3 className="mt-4 font-semibold dark:text-[#2e1b4d]">{step.title}</h3>
 
-          <p className="mt-1 text-sm text-gray-300 dark:text-foreground/70">
+          <p className="mt-1 text-xs text-gray-300 dark:text-foreground/70">
             {step.description}
           </p>
         </motion.div>
@@ -72,10 +79,10 @@ export default function HowItWorks() {
         {index !== steps.length - 1 && (
           <>
             {/* Desktop connector */}
-            <div className="hidden md:block h-px w-16 dark:bg-border/10 bg-neutral-700 mx-4" />
+            <div className="hidden lg:block h-px w-12 dark:bg-[#381f62]/20 bg-neutral-800 mx-4" />
 
             {/* Mobile connector */}
-            <div className="block md:hidden h-12 w-px dark:bg-border/10 bg-border my-5" />
+            <div className="block lg:hidden h-12 w-px dark:bg-[#381f62]/20 bg-neutral-800 my-5" />
           </>
         )}
       </div>
@@ -83,7 +90,9 @@ export default function HowItWorks() {
   })}
 
 </div>
-<Button className="mt-20 px-8 py-6 bg-amber-500 text-white font-bold rounded-full ">Get Started</Button>
+<Button 
+onClick={()=>(router.push("auth/login"))}
+className="mt-20 px-8 py-6 bg-amber-500 text-white font-bold rounded-full cursor-pointer">Get Started</Button>
       </div>
     </section>
   );

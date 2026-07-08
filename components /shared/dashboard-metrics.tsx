@@ -1,23 +1,35 @@
 import {
-  FileUser,
-    ShieldCheck,
-    TrendingUp,
-    Upload,
+  CloudUpload,
     Wallet,
-    Zap,
   } from "lucide-react";
 import { Button } from "../ui/button";
 import Link from "next/link";
+import { useRef } from "react";
+import { Input } from "../ui/input";
+import { useRouter } from "next/navigation";
   
-  export function DashboardMetrics({
-    financialStatus,
-  }: {
-    financialStatus: {
+  export function DashboardMetrics({ financialStatus }: {financialStatus: {
       availableBalance: string;
       safeLockedBalance: string;
       sapaRisk: string;
+    };}) {
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const router = useRouter();
+
+    const handleUploadClick = () => {
+      fileInputRef.current?.click();
     };
-  }) {
+    
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+    
+      if (!file) return;
+    
+      console.log(file);
+    
+      // Upload to backend here
+    };
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
   
@@ -31,13 +43,14 @@ import Link from "next/link";
             {financialStatus.availableBalance}
           </h2>
 
-          <div className="flex justify-between gap-2 w-full mt-6">
-            <Button className="w-1/2 py-5.5 bg-[#d98825] font-bold cursor-pointer text-white">Fund</Button>
-            <Button className="w-1/2 py-5.5 bg-[#8c52f1]/20 font-bold cursor-pointer text-[#8c52f1]">Withdraw</Button>
+          <div className=" w-full mt-6">
+            <Button
+            onClick={()=>(router.push("/dashboard/chat"))}
+             className="w-full py-5.5 bg-[#d98825] font-bold cursor-pointer text-white">Chat with Zelta</Button>
           </div>
 
           <div className="mt-4">
-            <Link href="/dashboard/chat" className="text-sm text-neutral-500 dark:text-foreground hover:text-neutral-500 ">Talk to Zelta AI before sending money on impulse</Link>
+            <p className="text-sm text-neutral-500 dark:text-foreground hover:text-neutral-500 ">Talk to Zelta AI before making another purchase on impulse</p>
           </div>
   
         </div>
@@ -54,8 +67,27 @@ import Link from "next/link";
          </p>
         </div>
 
-        <div className="flex items-center justify-center min-h-30 border rounded-md border-dashed border-neutral-800 dark:border-neutral-300 dark:text-foreground/80">
-<FileUser/>
+        <div className="flex flex-col items-center justify-center min-h-30 border rounded-md border-dashed border-neutral-800 dark:border-neutral-300 dark:text-foreground/80">
+        <Input ref={fileInputRef}
+         type="file"
+         accept=".csv"
+         className="hidden"
+         onChange={handleFileChange}
+        />
+
+        <div 
+        onClick={handleUploadClick}
+        className="bg-[#8c52f1]/10 p-4 rounded-3xl cursor-pointer hover:text-[#8c52f1]">
+           <CloudUpload/>
+
+        </div>
+           <p className="mt-3 text-sm text-neutral-400 dark:text-foreground/90">
+             Click to upload a CSV file
+           </p>
+
+           <p className="text-xs text-neutral-500">
+             or drag and drop
+           </p>
         </div>
 
         </div>
