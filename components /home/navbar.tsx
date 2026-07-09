@@ -154,7 +154,7 @@ export default function Navbar() {
              onClick={() =>
              setTheme(theme === "dark" ? "light" : "dark")
              }
-             className="rounded-lg border border-neutral-900 dark:border-neutral-300 p-2 cursor-pointer dark:text-amber-500"
+             className="rounded-lg border border-neutral-800 dark:border-neutral-300 p-2 cursor-pointer dark:text-amber-500"
             >
              {theme === "dark" ? (
              <Sun  size={15} />
