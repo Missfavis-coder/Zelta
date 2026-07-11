@@ -9,6 +9,7 @@ import {
   Sparkles,
   X,
   ScanEye,
+  CircleQuestionMark,
 } from "lucide-react";
 
 type SimulationResult = {
@@ -23,6 +24,7 @@ export default function WhatIfPage() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
 const [activeTab, setActiveTab] = useState<
   "overview" | "insights" | "alternatives"
 >("overview");
@@ -84,7 +86,7 @@ const [activeTab, setActiveTab] = useState<
           <div className="rounded-md p-5 bg-neutral-800/20 dark:bg-neutral-200/30 ">
             <div className="flex items-center gap-3">
               <Wallet size={18} className="text-foreground" />
-              <span className="text-neutral-500 dark:text-foreground/80 md:text-[14px] md:text-sm text-xs font-semibold uppercase tracking-wide">
+              <span className="text-neutral-500 dark:text-foreground/90 md:text-[14px] md:text-sm text-xs font-semibold uppercase tracking-wide">
                  Balance
               </span>
             </div>
@@ -97,22 +99,32 @@ const [activeTab, setActiveTab] = useState<
 
         {/* Input Area */}
 
-        <div className="bg-neutral-800/20 dark:bg-neutral-200/30  rounded-md md:p-6 p-5">
-          <h3 className="md:text-[16px] text-sm dark:text-[#160a2a]/90 font-semibold mb-3">
+        <div >
+          <div className="flex items-center justify-between">
+          <h3 className=" text-sm dark:text-[#160a2a] font-light mb-3">
             What are you thinking of doing?
           </h3>
 
-          <p className="text-neutral-300 dark:text-foreground/80 text-sm mb-4">
-            Example:
-            <br />
-            • Buy a ₦25,000 sneaker
-            <br />
-            • Travel home this weekend
-            <br />
-            • Spend ₦15,000 on a birthday
-          </p>
+          <div 
+          onClick={()=>{setShowHowItWorks(true)}}
+          className="flex items-center gap-1 text-neutral-300 dark:text-foreground/80 dark:hover:text-foreground text-xs mb-4 cursor-pointer">
+            <CircleQuestionMark size={12}/>
+             <p>How it works</p>
+          </div>
+          </div>
+{showHowItWorks && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-800/20  dark:bg-white/40  p-4 ">
+    <div className="w-full md:max-w-[40%] max-w-[80%]  rounded-md bg-neutral-900 dark:bg-background overflow-hidden shadow-2xl p-4">
+      <div className="dark:text-black text-sm flex items-center justify-between">
+      <h1>How Simulations Work</h1>
+      <div className="cursor-pointer"> <X/> </div>
+      </div>
 
-          <textarea
+    </div>
+  </div>
+)}
+<div  >    
+<textarea
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             rows={4}
@@ -120,7 +132,7 @@ const [activeTab, setActiveTab] = useState<
             className="w-full rounded-xl border border-neutral-900 dark:border-foreground/20 p-4 outline-none dark:focus:border-amber-500 focus:border-amber-500 dark:text-foreground text-sm"
           />
 
-          <div className="text-sm text-amber-400/40 dark:text-amber-500">Ensure to enter the amount of whatever purchase you want to make</div>
+          <div className="text-sm text-amber-400 dark:text-amber-500 font-extralight">Ensure to enter the amount of whatever purchase you want to make</div>
 
           <button
             onClick={handleSimulation}
@@ -131,19 +143,21 @@ const [activeTab, setActiveTab] = useState<
               ? "Running Simulation..."
               : "Run Simulation"}
           </button>
+</div>
+
         </div>
 
 
         {/* Results */}
         {showDialog && result && (
   <div  className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-800/20  dark:bg-neutral-300/10 backdrop-blur-sm p-4 ">
-    <div className="w-full max-w-3xl  rounded-md bg-neutral-900 dark:bg-background overflow-hidden">
+    <div className="w-full max-w-2xl  rounded-md bg-neutral-900 dark:bg-background overflow-hidden shadow-md">
 
       {/* Header */}
 
       <div className="flex items-center justify-between p-4 ">
         <div>
-          <h2 className="font-bold md:text-[18px] text-[15px] uppercase dark:text-[#160a2a]/90 ">
+          <h2 className="font-semibold tracking-wide text-sm uppercase dark:text-[#160a2a]/90 ">
             Simulation Result
           </h2>
 
@@ -159,7 +173,7 @@ const [activeTab, setActiveTab] = useState<
           onClick={() => setShowDialog(false)}
           className="text-neutral-400 dark:text-[#160a2a]/90 hover:text-white text-xl cursor-pointer"
         >
-          <X/>
+          <X size={18}/>
         </button>
       </div>
 
