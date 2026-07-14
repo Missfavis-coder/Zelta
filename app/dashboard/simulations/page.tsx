@@ -224,7 +224,7 @@ const [activeTab, setActiveTab] = useState<
     <div className="grid md:grid-cols-2 gap-4">
 
       <div className="bg-neutral-800/30 dark:bg-neutral-300/20 rounded-xl p-4">
-        <p className="text-neutral-400 dark:text-foreground/80 text-xs uppercase">
+        <p className="text-neutral-400 dark:text-foreground/90 text-xs uppercase">
           Remaining Balance
         </p>
 
@@ -295,7 +295,6 @@ const [activeTab, setActiveTab] = useState<
     <ul className="space-y-4 text-neutral-300 dark:text-foreground/70 text-sm">
       <li>✓ Delay purchase until next allowance</li>
       <li>✓ Save weekly towards the goal</li>
-      <li>✓ Find a lower-cost alternative</li>
       <li>✓ Take a campus gig to offset the cost</li>
     </ul>
   </div>
