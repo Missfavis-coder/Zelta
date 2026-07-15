@@ -273,7 +273,7 @@ const [activeTab, setActiveTab] = useState<
     <div className="flex items-center gap-2 mb-4">
       <Sparkles size={18} fill="#8c52f1" className="text-[#8c52f1]" />
       <h3 className="font-semibold dark:text-foreground">
-        The best decision at the moment.
+        The best decision currently.
       </h3>
     </div>
 
