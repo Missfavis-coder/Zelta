@@ -26,8 +26,7 @@ OA
         <h1 className="font-bold text-sm">
 Ojo Adeshola
         </h1>
-        <p className="text-xs font-semibold tracking-wide">
-ofavourmi55@gmail.com
+        <p className="text-xs font-semibold tracking-wide">ojoadeshola228@gmail.com
         </p>
       </div>
 
